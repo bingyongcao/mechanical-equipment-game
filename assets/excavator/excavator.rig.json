@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "units": "meters",
+  "coordinates": {
+    "glbUp": "+Y",
+    "glbForward": "+X",
+    "blenderUp": "+Z",
+    "blenderForward": "+X"
+  },
+  "joints": [
+    {
+      "node": "J_Slew",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "limitsDegrees": [
+        -180,
+        180
+      ],
+      "label": "回转平台"
+    },
+    {
+      "node": "J_Boom",
+      "axis": [
+        0,
+        0,
+        -1
+      ],
+      "limitsDegrees": [
+        -25,
+        45
+      ],
+      "label": "动臂"
+    },
+    {
+      "node": "J_Stick",
+      "axis": [
+        0,
+        0,
+        -1
+      ],
+      "limitsDegrees": [
+        -65,
+        50
+      ],
+      "label": "斗杆"
+    },
+    {
+      "node": "J_Bucket",
+      "axis": [
+        0,
+        0,
+        -1
+      ],
+      "limitsDegrees": [
+        -48,
+        48
+      ],
+      "label": "铲斗"
+    }
+  ],
+  "hydraulics": [
+    {
+      "name": "Boom lift -0.34",
+      "base": "Boom lift -0.34_base_anchor",
+      "tip": "Boom lift -0.34_tip_anchor",
+      "barrel": "Boom lift -0.34_barrel",
+      "rod": "Boom lift -0.34_rod",
+      "barrelLength": 1.1835979559795318,
+      "rodLength": 1.321684384177144
+    },
+    {
+      "name": "Boom lift 0.34",
+      "base": "Boom lift 0.34_base_anchor",
+      "tip": "Boom lift 0.34_tip_anchor",
+      "barrel": "Boom lift 0.34_barrel",
+      "rod": "Boom lift 0.34_rod",
+      "barrelLength": 1.1835979559795318,
+      "rodLength": 1.321684384177144
+    },
+    {
+      "name": "Stick ram",
+      "base": "Stick ram_base_anchor",
+      "tip": "Stick ram_tip_anchor",
+      "barrel": "Stick ram_barrel",
+      "rod": "Stick ram_rod",
+      "barrelLength": 0.9318561578146687,
+      "rodLength": 1.0405727095597135
+    },
+    {
+      "name": "Bucket ram",
+      "base": "Bucket ram_base_anchor",
+      "tip": "Bucket ram_tip_anchor",
+      "barrel": "Bucket ram_barrel",
+      "rod": "Bucket ram_rod",
+      "barrelLength": 1.3529967267066625,
+      "rodLength": 1.5108463448224398
+    }
+  ],
+  "bucketLinkage": {
+    "rocker": "J_BucketRocker",
+    "link": "J_BucketLink",
+    "target": "Bucket_link_target",
+    "pivotInStickXZ": [
+      4.03,
+      2.31
+    ],
+    "bucketPivotInStickXZ": [
+      4.5,
+      1.47
+    ],
+    "lugOffsetXZ": [
+      0.26,
+      0.03
+    ],
+    "rockerLength": 0.623938980864495,
+    "linkLength": 0.7481310450955803,
+    "rockerRestAngle": -0.11242704509012448,
+    "note": "XZ values use the Blender rest frame; runtime needs to reproduce linkage and hydraulic constraints because glTF does not store Blender drivers."
+  },
+  "annotations": [
+    {
+      "node": "Label_动臂",
+      "text": "动臂"
+    },
+    {
+      "node": "Label_斗杆",
+      "text": "斗杆"
+    },
+    {
+      "node": "Label_铲斗",
+      "text": "铲斗"
+    },
+    {
+      "node": "Label_驾驶室",
+      "text": "驾驶室"
+    },
+    {
+      "node": "Label_履带",
+      "text": "履带"
+    },
+    {
+      "node": "Label_液压缸",
+      "text": "液压缸"
+    }
+  ],
+  "limitations": [
+    "Illustrative excavator, not a manufacturer dimensional replica.",
+    "Joint limits are provisional, not validated for whole-machine self-collision.",
+    "Track shoes are static in the optimized GLB; tread motion requires runtime animation or a separate animated track asset.",
+    "Physics proxies are supplied separately and require a physics engine.",
+    "Hydraulic and linkage constraints must be implemented at runtime."
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "nodes": 46,
+  "meshes": 15,
+  "primitives": 35,
+  "triangles": 70500,
+  "glbBytes": 1331960,
+  "collisionHulls": 22,
+  "linkageTests": [
+    {
+      "bucket_deg": -48,
+      "link_closure_error_m": 3.5762786865234375e-07
+    },
+    {
+      "bucket_deg": -24,
+      "link_closure_error_m": 2.384185791015625e-07
+    },
+    {
+      "bucket_deg": 0,
+      "link_closure_error_m": 4.76837158203125e-07
+    },
+    {
+      "bucket_deg": 24,
+      "link_closure_error_m": 0.0
+    },
+    {
+      "bucket_deg": 48,
+      "link_closure_error_m": 1.1920928955078125e-07
+    }
+  ]
+}
