@@ -1,95 +1,99 @@
-# 小小工程师 · 机械探索乐园
+# Little Builders · Mechanical Exploration Yard
 
-基于 Three.js、TypeScript 和 Rapier 的儿童施工机械游戏原型。使用本项目通过 Blender MCP 建立的 EX 200 挖掘机与自卸卡车模型。第一场景搬运石头；第二场景为厂区挖沙装车技术原型，装载至车厢容量 80% 完成。精度边界和验证方法见 [SAND-VALIDATION.md](SAND-VALIDATION.md)。
+> 🌐 **Language / 语言**: [English](README.md) · [中文](README-zh.md)
 
-## 启动
+A children's construction-machine game prototype built on Three.js, TypeScript, and Rapier. All mechanical models in this project are produced through Blender MCP.
 
-本机已安装依赖并使用 Node.js 24 验证。
+![City construction site preview](assets/scenes/city-construction-preview.png)
+
+## Getting Started
+
+Dependencies are installed locally and verified with Node.js 24.
 
 ```powershell
 npm.cmd install --cache .npm-cache
 npm.cmd run dev -- --port 5173
 ```
 
-打开 http://127.0.0.1:5173 。无需账号、后端或 API 密钥。资源随项目提供，依赖安装完成后游戏运行不需要外部模型服务。
+Open http://127.0.0.1:5173. No account, backend, or API key required. Assets ship with the project — once dependencies are installed, the game runs without any external model service.
 
 ```powershell
 npm.cmd run build
 npm.cmd run preview
 ```
 
-生产构建在 `dist/`。物理模块按需加载；Rapier 包内含 WebAssembly，因此其单个构建分块仍较大，Vite 会显示体积提醒。尚未进行广泛设备性能测试。
+The production build is emitted to `dist/`. The physics module is loaded on demand; because Rapier ships WebAssembly inside its package, the single build chunk for it is still sizeable and Vite will surface a size warning. We have not run broad device performance testing yet.
 
-## 已实现
+## Implemented
 
-- 机械展厅：模型环绕、缩放、平移；七个中文部件标签、说明及高亮。
-- 控制：鼠标长按按钮和键盘；底盘行走与转向、上车回转、动臂、斗杆、铲斗。
-- 铲斗 v2：薄楔形前刃、薄斗齿、连续入口与底板，视觉模型和碰撞体同步。入口摩擦系数 0.4（取接触双方较小值），斗内仍为 0.85。触地截断下压动作，但不取消同一帧的合法行走，不允许穿地。
-- 联动：网页重建液压缸朝向与铲斗四连杆几何；关节限位、地面/围墙/工棚的基本阻挡检查。
-- 城市工地：楼群、体育馆、道路、绿化、围墙、工棚、平整地面、石堆与绿色目标区。地面渲染、物理碰撞与机械行走高度统一为零；铲斗触地静默停止下压，围墙与工棚分别提示。
-- 两个独立场景：城市工地搬运 8 块石头；砂料厂挖掘有限沙层，越墙卸入自卸卡车至 80%。砂料厂使用低矮厂房、道路和独立围墙布置。
-- 物理：24 个形状有差异的凸包石头，重力、碰撞、惯性、摩擦、休眠与 CCD；分块凹形铲斗。正常搬运不绑定、吸附或传送石头。
-- 判定：石头脱离铲斗、进入目标区、接近地面并停稳 2 秒后计数；完成前移出会扣除，完成事件仅触发一次。
-- 反馈：烟花、庆祝弹窗、可开关提示音；复位/重开、返回展厅、场景切换。
-- 输入释放：松开、取消触点、移出按钮、窗口失焦时停止；页面隐藏时冻结模拟，恢复时不补算长时间步。
-- 自适应布局、按钮焦点样式、弹窗键盘关闭及减少动态效果偏好。
+- **Mechanical showroom**: orbit, zoom, and pan around the model; seven Chinese part labels with descriptions and highlights.
+- **Controls**: hold-to-press mouse buttons and keyboard; chassis driving and steering, upper-structure swing, boom, arm, and bucket.
+- **Bucket v2**: thin wedge front edge, thin teeth, continuous inlet and floor, with visual model and collider in sync. Inlet friction is 0.4 (the lower of the two contact values); bucket interior remains 0.85. Ground contact cuts off downward bucket motion without cancelling legal driving in the same frame, and the bucket cannot sink through the ground.
+- **Linkage**: in-browser reconstruction of hydraulic-cylinder orientation and the bucket four-bar geometry; joint limits and basic obstruction checks against ground, walls, and the workshop shed.
+- **City construction site**: buildings, a stadium, roads, greenery, walls, workshop shed, flattened ground, a rock pile, and a green target area. Ground rendering, physics collision, and machine walking height are unified at zero; bucket ground contact silently stops downward motion, with separate prompts for walls and the workshop shed.
+- **Two independent scenes**: city site moves 8 rocks to the target; the materials yard digs a finite sand layer and dumps it over the wall into a dump truck to 80% capacity. The materials yard uses a low workshop building, roads, and a separate wall layout.
+- **Physics**: 24 convex-hull rocks of varied shapes with gravity, collision, inertia, friction, sleeping, and CCD; a segmented concave bucket. Normal play never binds, snaps, or teleports rocks.
+- **Judgment**: rocks are counted once they leave the bucket, enter the target area, approach the ground, and settle for 2 seconds. Leaving the target before completion deducts a rock; the completion event fires only once.
+- **Feedback**: fireworks, celebration dialog, optional sound effects; reset/restart, return-to-showroom, and scene switching.
+- **Input release**: stops on key/button release, contact cancel, leaving the button, and window blur; the simulation is frozen while the page is hidden and does not catch up a long timestep when it resumes.
+- **Adaptive layout, button focus styling, keyboard-closeable dialog, and a reduced-motion preference.**
 
-## 操作
+## Controls
 
-| 操作                | 键位                  |
-| ------------------- | --------------------- |
-| 前进 / 后退         | W / S                 |
-| 底盘左转 / 右转     | A / D                 |
-| 上车左回转 / 右回转 | Q / E                 |
-| 动臂抬起 / 放下     | R / F                 |
-| 斗杆伸出 / 收回     | T / G                 |
-| 铲斗收斗 / 翻斗     | Y / H                 |
+| Action                       | Keys                |
+| ---------------------------- | ------------------- |
+| Forward / Reverse            | W / S               |
+| Chassis turn left / right    | A / D               |
+| Upper-structure swing L / R  | Q / E               |
+| Boom raise / lower           | R / F               |
+| Arm extend / retract         | T / G               |
+| Bucket curl / dump           | Y / H               |
 
-全部机械动作也可以按住右侧按钮完成。鼠标拖动场景旋转镜头，滚轮缩放，右键拖动平移。
+Every machine action can also be performed by holding the on-screen buttons on the right. Drag with the mouse to rotate the camera, scroll to zoom, right-drag to pan.
 
-可在施工场景点击“贴地铲装”，等待状态显示“已贴地”后向石堆推进，再收斗、抬臂。手动控制动臂、斗杆或铲斗会自动退出辅助。
+In the construction scene, click "Ground-level Scoop Assist"; once the status reads "Grounded", drive into the rock pile, then curl the bucket and raise the boom. Manually controlling the boom, arm, or bucket automatically disables the assist.
 
-搬到目标区上方后充分翻斗；如果石头没有滑出，可稍微放低动臂改变倾角。石头需要落下、滚动并停稳后才会计数。
+After positioning above the target, dump fully. If a rock does not slide out, lower the boom slightly to change the tilt angle. Rocks only count after they fall, roll, and come to rest.
 
-工地中的“重新开始”会同时重置机械、石头和任务；返回展厅或换场景也会重置本次任务。
+"Restart" in the construction scene resets the machine, rocks, and the task together. Returning to the showroom or switching scenes also resets the current task.
 
-## 验证
+## Verification
 
 ```powershell
 npm.cmd test
-# 先启动 5173 端口的开发服务，再运行浏览器和真实搬运回归：
+# Start the dev server on port 5173 first, then run the browser and real-handling regressions:
 npm.cmd run test:browser
-# 沙场真实单次搬运与独立满载判定夹具：
+# Real single-rock handling and independent full-load judgment fixtures for the sand yard:
 npm.cmd run test:sand
 ```
 
-浏览器脚本默认使用本机 Microsoft Edge 的标准安装路径；`e2e.mjs` 可通过 `BROWSER_PATH` 指定其他 Chromium 浏览器。
+The browser scripts default to the local standard Microsoft Edge install path; `e2e.mjs` accepts a `BROWSER_PATH` environment variable to point at another Chromium browser.
 
-- 4 项逻辑测试：稳定计数、空中/斗内排除、移出扣除、全范围连杆闭合。
-- 浏览器回归：加载、七个标注、长按/释放、失焦、行走、场景切换、返回、庆祝、继续探索和 390px 窄屏；检查浏览器异常和请求错误。
-- 实际物理搬运回归：使用与玩家相同的机械控制器与固定物理步，执行放臂、推进、收斗、抬臂、行走、回转、翻斗，验证一次至少有 2 块石头送达。此测试不改变石头位置或任务分数。
-- 平地与阻挡回归：在原先起伏的边缘区域行走、靠近实际围墙、尝试继续下压铲斗，验证正常行走无阻挡，围墙判定贴近墙面，触地不误报围墙。
-- 辅助铲装回归：第一场景石堆、0° / ±15° / ±25° 接近条件，使用同一套推进、收斗、抬臂输入，各组装起 5～7 块石头；记录位于 `test-results/scoop-assist-results.json`。浏览器测试同时检查按钮开关与手动接管；碰撞回归检查按住下压仍可贴地前进。此结果是固定测试条件下的回归证据，不保证任意石堆或任意姿态的装料数量。第二场景采用独立沙层测试，旧石堆辅助不适用。
-- 烟花测试单独设置自由落体石头夹具，在目标区上方释放 8 块动态石头，验证真实落地判定与庆祝 UI。它不代表人工通过键盘完成了整个任务。
+- 4 logic tests: stable counting, in-air / in-bucket exclusion, leaving-the-target deduction, and full-range linkage closure.
+- Browser regressions: load, seven labels, hold/release, blur, driving, scene switching, return, celebration, continue-exploring, and a 390px narrow viewport; checks for browser exceptions and request errors.
+- Real physical handling regression: uses the same machine controller and fixed physics step as the player, executing boom-down, drive-in, bucket-curl, boom-up, drive, swing, and dump, verifying at least 2 rocks delivered in a single pass. This test does not alter rock positions or task score.
+- Flat ground and obstruction regression: walking along the previously uneven edge areas, approaching real walls, and attempting to keep pushing the bucket down — verifies normal walking has no obstruction, wall judgment stays tight against the wall face, and ground contact is not misreported as a wall.
+- Assist-scoop regression: first-scene rock pile, 0° / ±15° / ±25° approach conditions, using the same drive-in, curl, and boom-up inputs, picking up 5–7 rocks per assembly; results recorded in `test-results/scoop-assist-results.json`. Browser tests additionally check button toggling and manual takeover; the collision regression checks that holding the bucket down still allows grounded forward motion. These results are regression evidence under fixed test conditions and do not guarantee pickup counts for arbitrary rock piles or poses. The second scene uses an independent sand-layer test; the old rock-pile assist does not apply.
+- Fireworks test uses a dedicated free-fall rock fixture, releasing 8 dynamic rocks above the target to verify real ground-landing judgment and the celebration UI. It does not represent a full task being completed by a human via the keyboard.
 
-运行后的截图和测试报告位于 `test-results/`，不纳入版本控制。`npm run build` 同时检查 TypeScript。
+Generated screenshots and test reports land in `test-results/` and are not under version control. `npm run build` also runs the TypeScript checker.
 
-## 项目结构
+## Project Structure
 
-- `src/main.ts`：应用状态、输入、镜头、固定时间步和烟花。
-- `src/machine.ts`：模型加载、关节与液压/连杆联动、姿态阻挡。
-- `src/physics.ts`：Rapier 世界、机械碰撞代理、石头和渲染插值。
-- `src/environment.ts`：展厅、城市工地和场景资源释放。
-- `src/logic.mjs`：可独立测试的机械几何与任务规则。
-- `src/ui.ts` / `src/style.css`：界面与响应式样式。
-- `assets/excavator/`：Blender、GLB、模型预览、关节配置和碰撞顶点。
-- `scripts/model_excavator_*.py`：Blender 模型生成脚本。
-- `scripts/refine_bucket.py`：在现有 Blender 源文件上更新 v2 铲斗，重新导出 GLB、碰撞体和入口配置；`scripts/render_excavator_preview.py` 重新导入 GLB 后渲染预览。
+- `src/main.ts`: application state, input, camera, fixed timestep, and fireworks.
+- `src/machine.ts`: model loading, joints, hydraulic / linkage coupling, and pose-based obstruction.
+- `src/physics.ts`: Rapier world, machine collision proxies, rocks, and render interpolation.
+- `src/environment.ts`: showroom, city construction site, and scene-resource release.
+- `src/logic.mjs`: independently testable machine geometry and task rules.
+- `src/ui.ts` / `src/style.css`: UI and responsive styling.
+- `assets/excavator/`: Blender sources, GLB, model previews, joint configuration, and collision vertices.
+- `scripts/model_excavator_*.py`: Blender model-generation scripts.
+- `scripts/refine_bucket.py`: updates the v2 bucket on existing Blender source files and re-exports the GLB, colliders, and inlet config; `scripts/render_excavator_preview.py` re-imports the GLB and renders the preview.
 
-## 当前边界
+## Current Limitations
 
-目前只有挖掘机可以选择，推土机和起重机明确显示为筹备中。第一场景地面固定；第二场景可挖掘并使沙层变形，采用粗颗粒和有限体积网格混合模拟。履带几何尚未加入循环行走动画。底盘及工作装置采用运动学控制，而非整机动力学，未模拟液压负载、重载倾覆、完整自碰撞或真实履带与土壤接触。基础阻挡检查和已通过的搬运回归不能替代任意姿态的工程验证。
+Only the excavator is selectable — bulldozer and crane are explicitly marked as in preparation. The first scene's ground is fixed; the second scene allows digging and deforms the sand layer, using a mixed coarse-particle and finite-volume-mesh simulation. Track geometry does not yet have a rolling-walk animation. The chassis and work equipment are driven kinematically, not by full-machine dynamics — hydraulic loads, tipping under load, complete self-collision, and realistic track/soil contact are not simulated. The basic obstruction checks and the passing handling regressions do not substitute for arbitrary-pose engineering validation.
 
-机械与石头的细节高于外围城市；城市建筑是程序化示意模型。声音当前为操作和完成提示，尚无发动机、履带或液压实录音效。
+Detail on the machine and rocks is higher than the surrounding city; the city buildings are procedural placeholders. Audio is currently limited to action and completion cues — there is no engine, track, or hydraulic field recording.
 
-`window.__builders` 只在 Vite 开发模式暴露，供回归脚本检查，不包含在生产模式的可调用调试入口中。
+`window.__builders` is only exposed in Vite dev mode for regression scripts; it is not included as a callable debug entry point in production builds.
