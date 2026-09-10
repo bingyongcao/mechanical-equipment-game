@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "units": "meters",
   "coordinates": {
     "glbUp": "+Y",
@@ -152,5 +152,42 @@
     "Track shoes are static in the optimized GLB; tread motion requires runtime animation or a separate animated track asset.",
     "Physics proxies are supplied separately and require a physics engine.",
     "Hydraulic and linkage constraints must be implemented at runtime."
-  ]
+  ],
+  "bucketGeometry": {
+    "innerProfileXY": [
+      [
+        -0.07,
+        0.0
+      ],
+      [
+        -0.39,
+        -0.37
+      ],
+      [
+        -0.42,
+        -0.77
+      ],
+      [
+        -0.2,
+        -1.11
+      ],
+      [
+        0.26,
+        -1.17
+      ],
+      [
+        0.85,
+        -1.17
+      ]
+    ],
+    "innerHalfWidth": 0.55,
+    "skidPoint": [
+      1.08,
+      -1.217,
+      0
+    ],
+    "cuttingEdgeThickness": 0.014,
+    "toothTipThickness": 0.012,
+    "description": "Thin continuous wedge, matching visual and collision geometry; no below-ground allowance."
+  }
 }

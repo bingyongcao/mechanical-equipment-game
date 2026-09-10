@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "bytes": 2735412,
+  "meshes": 16,
+  "triangles": 56100,
+  "bounds": {
+    "min": [
+      -3.600000001490116,
+      -0.0054999589920043945,
+      -1.619999885559082
+    ],
+    "max": [
+      3.6199997887015343,
+      3.3549999594688416,
+      1.6199999451637268
+    ]
+  },
+  "capacityM3": 12.320000000000002,
+  "targetVolumeM3": 9.856,
+  "dropBodies": 32,
+  "wallTests": 4,
+  "scope": "Asset loading and rigid-body container validation only; not sand simulation or 80% gameplay completion."
+}

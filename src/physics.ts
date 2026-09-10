@@ -29,29 +29,31 @@ export class Simulation {
     this.world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
     this.world.timestep = 1 / 120;
     this.world.numSolverIterations = 8;
-    const ground = terrainGeometry(),
-      positions = ground.attributes.position.array as Float32Array;
-    this.world.createCollider(
-      RAPIER.ColliderDesc.trimesh(
-        positions,
-        new Uint32Array(ground.index!.array),
-      )
-        .setFriction(0.9)
-        .setCollisionGroups(0x00040001),
-    );
-    ground.dispose();
-    for (const [x, z, w, d] of [
-      [0, -11.6, 29, 0.3],
-      [0, 11.6, 29, 0.3],
-      [-14.5, 0, 0.3, 23],
-      [14.5, 0, 0.3, 23],
-      [-10, -8, 4, 2.4],
-    ]) {
+    if (variant !== 1) {
+      const ground = terrainGeometry(),
+        positions = ground.attributes.position.array as Float32Array;
       this.world.createCollider(
-        RAPIER.ColliderDesc.cuboid(w / 2, 1.1, d / 2)
-          .setTranslation(x, 1.0, z)
+        RAPIER.ColliderDesc.trimesh(
+          positions,
+          new Uint32Array(ground.index!.array),
+        )
+          .setFriction(0.9)
           .setCollisionGroups(0x00040001),
       );
+      ground.dispose();
+      for (const [x, z, w, d] of [
+        [0, -11.6, 29, 0.3],
+        [0, 11.6, 29, 0.3],
+        [-14.5, 0, 0.3, 23],
+        [14.5, 0, 0.3, 23],
+        [-10, -8, 4, 2.4],
+      ]) {
+        this.world.createCollider(
+          RAPIER.ColliderDesc.cuboid(w / 2, 1.1, d / 2)
+            .setTranslation(x, 1.0, z)
+            .setCollisionGroups(0x00040001),
+        );
+      }
     }
     const byParent = new Map<string, RAPIER.RigidBody>();
     this.machine.root.updateMatrixWorld(true);
@@ -73,14 +75,19 @@ export class Simulation {
         new Float32Array(c.vertices.flat()),
       );
       if (!desc) throw new Error("无效碰撞体 " + c.name);
+      const entry =
+        c.name.startsWith("COL_Bucket tooth") ||
+        c.name === "COL_Bucket cutting edge";
+      if (entry) desc.setFrictionCombineRule(RAPIER.CoefficientCombineRule.Min);
       this.world.createCollider(
         desc
-          .setFriction(0.85)
+          .setFriction(entry ? 0.4 : 0.85)
           .setRestitution(0.02)
           .setCollisionGroups(0x00020001),
         body,
       );
     }
+    if (variant === 1) return;
     const rand = seededRandom(128 + variant);
     for (let i = 0; i < 24; i++) {
       const column = i % 4,

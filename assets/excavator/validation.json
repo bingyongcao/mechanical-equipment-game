@@ -3,7 +3,7 @@
   "meshes": 15,
   "primitives": 35,
   "triangles": 70500,
-  "glbBytes": 1331960,
+  "glbBytes": 1331988,
   "collisionHulls": 22,
   "linkageTests": [
     {

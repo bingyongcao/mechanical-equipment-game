@@ -1,1 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#f0b457"/><g fill="none" stroke="#37443a" stroke-width="3" stroke-linejoin="round"><path d="M13 41h38v10H13zM18 41V30a14 14 0 0 1 28 0v11M28 18v-7h8v7"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="badge" x1="8" y1="5" x2="56" y2="59" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffc45f"/>
+      <stop offset="1" stop-color="#e99b3f"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="17" fill="url(#badge)"/>
+  <path d="M13 46.5h32.5" fill="none" stroke="#293c3c" stroke-width="4" stroke-linecap="round"/>
+  <path d="M17 40h20l7 6H17a3 3 0 0 1 0-6Z" fill="#fff8dc" stroke="#293c3c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M22 39V27h10.5l4.5 12" fill="#f8f5e9" stroke="#293c3c" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M35 33.5 44 21l5 3-8.5 13.5" fill="none" stroke="#293c3c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m47.5 22.5 4.5-2 1.8 4.2-5 2.2" fill="#fff8dc" stroke="#293c3c" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="m41 37.5 8.5 2.5-4 6.5" fill="#fff8dc" stroke="#293c3c" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="22" cy="46.5" r="4.5" fill="#527968" stroke="#293c3c" stroke-width="2.5"/>
+  <circle cx="35" cy="46.5" r="4.5" fill="#527968" stroke="#293c3c" stroke-width="2.5"/>
+  <path d="M26 30h6" stroke="#7ea6a2" stroke-width="3" stroke-linecap="round"/>
+</svg>

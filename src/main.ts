@@ -9,6 +9,11 @@ import { markup, icon, description } from "./ui";
 import { clamp } from "./logic.mjs";
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = markup();
+const sandCard = document.querySelector('[data-scene="1"]')!;
+sandCard.querySelector("h3")!.textContent = "砂料厂 · 装车";
+sandCard.querySelector("p")!.textContent =
+  "挖掘沙层，卸入墙外卡车，装载至 80%。";
+sandCard.querySelector(".tag")!.textContent = "第二站 · 沙子装车";
 const $ = <T extends HTMLElement = HTMLElement>(s: string) =>
   document.querySelector<T>(s)!;
 const viewport = $("#viewport"),
@@ -181,11 +186,6 @@ function resize() {
 new ResizeObserver(resize).observe(viewport);
 function selectPart(label: string) {
   machine.highlight(label);
-  const d = description[label];
-  if (!d) return;
-  $("#part-title").textContent = d.title;
-  $("#part-text").textContent = d.text;
-  $("#part-note").hidden = false;
   document
     .querySelectorAll(".part-label")
     .forEach((b) =>
@@ -197,9 +197,21 @@ function createLabels() {
   for (const a of machine.annotationNodes) {
     const button = document.createElement("button");
     button.className = "part-label";
-    button.textContent = a.text;
     button.dataset.part = a.text;
-    button.ariaLabel = "认识" + a.text;
+    const copy = description[a.text];
+    button.ariaLabel = copy ? `${copy.title}：${copy.text}` : `认识${a.text}`;
+    const tooltip = document.createElement("span");
+    tooltip.className = "part-tooltip";
+    const title = document.createElement("strong");
+    title.textContent = copy?.title || a.text;
+    const text = document.createElement("span");
+    text.textContent = copy?.text || "";
+    tooltip.append(title, text);
+    button.append(tooltip);
+    button.addEventListener("pointerenter", () => machine.highlight(a.text));
+    button.addEventListener("pointerleave", () => machine.highlight(""));
+    button.addEventListener("focus", () => machine.highlight(a.text));
+    button.addEventListener("blur", () => machine.highlight(""));
     button.addEventListener("click", () => selectPart(a.text));
     $("#labels").append(button);
     labels.push({ node: a.node, button });
@@ -215,8 +227,8 @@ function updateLabels() {
     button.hidden = !visible;
     if (visible)
       projected.push({
-        x: clamp((p.x * 0.5 + 0.5) * w, 43, w - 43),
-        y: clamp((-p.y * 0.5 + 0.5) * h, 190, h - 210),
+        x: clamp((p.x * 0.5 + 0.5) * w, 18, w - 18),
+        y: clamp((-p.y * 0.5 + 0.5) * h, 18, h - 18),
         button,
       });
   }
@@ -230,11 +242,12 @@ function updateLabels() {
     }
     p.button.style.left = p.x + "px";
     p.button.style.top = p.y + "px";
+    p.button.classList.toggle("align-right", p.x > w * 0.65);
   }
   if (sim && mode === "site") {
     const p = new THREE.Vector3(
       sim.tracker.target.x,
-      0.55,
+      variant === 1 ? 3.5 : 0.55,
       sim.tracker.target.z,
     ).project(camera);
     $("#target-label").hidden = p.z > 1;
@@ -246,38 +259,10 @@ function updateModeUI() {
   document.body.dataset.mode = mode;
   $("#garage-panel").hidden = mode === "site";
   $("#mission-panel").hidden = mode !== "site";
-  $("#side-title").textContent =
-    mode === "site" ? "开工啦，小工程师！" : "今天，开哪一台？";
-  $("#side-intro").textContent =
-    mode === "site"
-      ? "慢慢试，每一次尝试都算进步。"
-      : "每一台机械，都有自己的超能力。";
-  $("#stage-title").textContent =
-    mode === "site"
-      ? variant
-        ? "工地材料整理"
-        : "城市建筑工地"
-      : "认识你的大力士";
-  $("#stage-subtitle").textContent =
-    mode === "site"
-      ? "把石头搬到绿色圆圈里，让工地焕然一新。"
-      : "转一转，看一看。每个零件都有自己的故事。";
-  $("#stage-eyebrow").textContent =
-    mode === "site"
-      ? "A LITTLE JOB. A BIG ACHIEVEMENT."
-      : "MEET YOUR EXCAVATOR";
-  $("#view-badge").innerHTML =
-    icon("cube", 15) + (mode === "site" ? "施工现场" : "机械展厅");
+  $("#side-title").hidden = mode === "site";
   $("#step1").classList.toggle("active", mode === "showroom");
   $("#step2").classList.toggle("active", mode === "site");
-  $("#start").innerHTML =
-    mode === "site"
-      ? "返回机械展厅 " + icon("arrow", 18)
-      : "去工地试一试 " + icon("arrow", 18);
-  $("#start-caption").textContent =
-    mode === "site" ? "换个角度，继续认识机械。" : "准备好大显身手了吗？";
-  $("#start-footnote").textContent =
-    mode === "site" ? "返回展厅会结束当前任务。" : "一个小任务，一份大成就。";
+  $("#start").hidden = mode === "site";
   $("#drive-hint").textContent =
     mode === "site" ? "左右履带配合，慢慢转弯。" : "进入工地后，就能开动履带。";
   $("#reset-machine").innerHTML =
@@ -288,19 +273,39 @@ function updateModeUI() {
       '[data-action="drive"],[data-action="steer"]',
     )
     .forEach((b) => (b.disabled = mode !== "site"));
-  $("#toggle-labels").classList.toggle("active", labelsOn);
-  $("#toggle-labels").setAttribute("aria-pressed", String(labelsOn));
-  $("#mission-name").textContent = variant
-    ? "工地材料整理"
-    : "城市工地 · 石头搬运";
-  $("#required").textContent = String(variant ? 12 : 8);
+  $("#mission-name").textContent = variant ? "砂料厂 · 装车" : "城市工地";
+  $("#required").textContent = variant ? "80%" : "8";
+  $(".progress-caption > span").textContent = variant
+    ? "车厢装载率"
+    : "搬运进度";
+  document
+    .querySelectorAll(".mission-steps b")
+    .forEach(
+      (o, i) =>
+        (o.textContent = (
+          variant
+            ? ["挖沙并收斗", "抬臂越过围墙", "卸入车厢至 80%"]
+            : ["装载石头", "移动到绿圈", "卸下并停稳"]
+        )[i]),
+    );
+  $("#success-count + span").textContent = variant
+    ? "车厢装载率"
+    : "块石头成功送达";
+  $("#success-dialog > p").innerHTML = variant
+    ? "卡车已装载至 80%，装沙任务完成。"
+    : "石头都到达了新家。<br/>你用自己的双手，完成了一份了不起的工程。";
+  $(".help-tip").textContent = variant
+    ? "放低动臂进入沙层，向前推进，再收斗、抬臂。靠近卡车后配合伸出斗杆抬高铲斗，越过围墙和车厢边缘，再翻斗卸沙。撒在道路上的沙不计入装载率。"
+    : "把铲斗放低，朝石头前进，再慢慢收斗、抬臂。运到绿色圆圈上方，翻斗卸下。";
   compactMission.hidden = mode !== "site";
   compactMission.textContent =
     "已送达 " +
     (sim?.tracker.count || 0) +
     " / " +
-    (variant ? 12 : 8) +
+    (variant ? "80%" : 8) +
     " 块石头 · 查看任务提示";
+  if (variant === 1)
+    compactMission.textContent = `车厢 ${sim?.tracker.count || 0}% / 80% · 挖沙装车`;
 }
 async function enterSite(index: number) {
   if (!ready || busy) return;
@@ -317,28 +322,38 @@ async function enterSite(index: number) {
     mode = "site";
     machine.reset(true);
     machine.highlight("");
-    const site = buildSite(index);
+    const site =
+      index === 1
+        ? await (await import("./sand-site")).buildSandSite()
+        : buildSite(0);
     environment = site.group;
     scene.add(environment);
     const { Simulation } = await import("./physics");
-    sim = new Simulation(machine, site.target, index ? 12 : 8);
+    sim =
+      index === 1
+        ? new (await import("./sand")).SandSimulation(machine, site.target, 80)
+        : new Simulation(machine, site.target, 8);
     await sim.init(index);
     scene.add(sim.group);
     for (let i = 0; i < 150; i++) sim.step();
     sim.render(1);
     labelsOn = false;
-    $("#part-note").hidden = true;
     isPaused = false;
-    $("#pause").innerHTML = icon("pause", 17);
     scene.background = new THREE.Color("#d8e4de");
     scene.fog = new THREE.Fog("#d8e4de", 48, 135);
     $("#delivered").textContent = "0";
+    lastCount = -1;
     $("#progress-fill").style.width = "0%";
     updateModeUI();
-    orbit.target.set(-0.5, 0.5, 0);
-    camera.position.set(17, 19, 23);
+    orbit.target.set(-0.5, 0.5, index === 1 ? -6 : 0);
+    camera.position.set(17, 19, index === 1 ? 14 : 23);
     orbit.update();
-    toast("欢迎来到工地！先试着前进，靠近石堆。", 4500);
+    toast(
+      index === 1
+        ? "放低铲斗挖沙，收斗抬臂，越墙卸入卡车。"
+        : "欢迎来到工地！先试着前进，靠近石堆。",
+      4500,
+    );
   } catch (e) {
     console.error(e);
     toast("场景加载失败，请重试。", 8000);
@@ -363,27 +378,22 @@ function returnShowroom() {
   machine.highlight("");
   labelsOn = true;
   isPaused = false;
-  $("#pause").innerHTML = icon("pause", 17);
   scene.background = new THREE.Color("#e9e6de");
   scene.fog = new THREE.Fog("#e9e6de", 45, 140);
   updateModeUI();
   focus();
-  selectPart("动臂");
   accumulator = 0;
 }
 function pause(value = !isPaused) {
   isPaused = value;
   clearInput();
-  $("#pause").innerHTML = icon(isPaused ? "play" : "pause", 17);
-  $("#pause").setAttribute("aria-label", isPaused ? "继续游戏" : "暂停游戏");
-  toast(isPaused ? "已暂停。再点一下，继续探索。" : "继续探索吧。");
   accumulator = 0;
   last = performance.now();
 }
 $("#start").addEventListener("click", () => {
-  if (mode === "showroom") showDialog("#scene-dialog");
-  else returnShowroom();
+  showDialog("#scene-dialog");
 });
+$("#return-showroom").addEventListener("click", returnShowroom);
 $("#change-scene").addEventListener("click", () => showDialog("#scene-dialog"));
 document.querySelectorAll<HTMLButtonElement>("[data-scene]").forEach((b) =>
   b.addEventListener("click", () => {
@@ -398,17 +408,38 @@ $("#choose-excavator").addEventListener("click", () => {
     focus();
   }
 });
-$("#focus").addEventListener("click", () => focus());
 $("#overview").addEventListener("click", () => focus(true));
-$("#toggle-labels").addEventListener("click", () => {
-  labelsOn = !labelsOn;
-  updateModeUI();
+$("#scoop-assist").addEventListener("click", () => {
+  if (!ready || busy || isPaused || mode !== "site" || variant === 1) return;
+  clearInput();
+  machine.setScoopAssist(!machine.scoopAssist);
+  toast(
+    machine.scoopAssist
+      ? "正在缓慢贴地。显示“已贴地”后，向石堆前进。"
+      : "贴地铲装已关闭，可以自由控制工作装置。",
+  );
 });
-$("#dismiss-note").addEventListener(
-  "click",
-  () => ($("#part-note").hidden = true),
-);
-$("#pause").addEventListener("click", () => pause());
+let assistUIState = "";
+function updateAssistUI() {
+  const state = `${mode}:${variant}:${machine.scoopAssist}:${machine.scoopAssistReady}:${isPaused}`;
+  if (state === assistUIState) return;
+  assistUIState = state;
+  const button = $<HTMLButtonElement>("#scoop-assist");
+  button.disabled = mode !== "site" || isPaused || variant === 1;
+  button.setAttribute("aria-pressed", String(machine.scoopAssist));
+  $("#assist-state").textContent = machine.scoopAssist
+    ? machine.scoopAssistReady
+      ? "已贴地"
+      : "调整中"
+    : "关闭";
+  $("#assist-hint").textContent = machine.scoopAssistReady
+    ? "向石堆前进，随后收斗并抬臂。"
+    : machine.scoopAssist
+      ? "正在调平；手动控制工作装置会退出。"
+      : "自动调整到贴近地面的装料姿态。";
+  if (variant === 1)
+    $("#assist-hint").textContent = "沙层请手动下挖、收斗并抬臂。";
+}
 $("#reset-machine").addEventListener("click", () => {
   if (!ready || busy) return;
   if (mode === "site") {
@@ -456,10 +487,6 @@ const bindings: Record<string, [string, number]> = {
   KeyH: ["joint3", 1],
 };
 window.addEventListener("keydown", (e) => {
-  if (e.code === "Escape") {
-    if (!dialogOpen()) pause();
-    return;
-  }
   const b = bindings[e.code];
   if (
     !b ||
@@ -624,6 +651,7 @@ let lastCount = 0,
   lastBlocked = 0;
 function frame(now: number) {
   const dt = Math.min((now - last) / 1000, 0.08);
+  const fixedStep = mode === "site" && variant === 1 ? 1 / 60 : 1 / 120;
   last = now;
   requestAnimationFrame(frame);
   inputs.clear();
@@ -639,8 +667,8 @@ function frame(now: number) {
     );
   if (ready && !busy && !isPaused && !dialogOpen() && !document.hidden) {
     accumulator += dt;
-    while (accumulator >= 1 / 120) {
-      machine.step(inputs, 1 / 120, mode === "site");
+    while (accumulator >= fixedStep) {
+      machine.step(inputs, fixedStep, mode === "site");
       if (
         (machine.blockedReason === "wall" ||
           machine.blockedReason === "office") &&
@@ -658,7 +686,8 @@ function frame(now: number) {
         const result = sim.step();
         if (result.count !== lastCount) {
           lastCount = result.count;
-          $("#delivered").textContent = String(result.count);
+          $("#delivered").textContent =
+            String(result.count) + (variant === 1 ? "%" : "");
           $("#progress-fill").style.width =
             Math.min(100, (result.count / sim.tracker.required) * 100) + "%";
           compactMission.textContent =
@@ -667,6 +696,8 @@ function frame(now: number) {
             " / " +
             sim.tracker.required +
             " 块石头 · 查看任务提示";
+          if (variant === 1)
+            compactMission.textContent = `车厢 ${result.count}% / 80% · 挖沙装车`;
           if (result.count > 0) tone(520, 0.12, 0.012);
         }
         if (result.justCompleted) {
@@ -674,16 +705,17 @@ function frame(now: number) {
           tone(523, 0.25);
           setTimeout(() => tone(659, 0.25), 160);
           setTimeout(() => tone(784, 0.5), 320);
-          $("#success-count").textContent = String(result.count);
+          $("#success-count").textContent =
+            String(result.count) + (variant === 1 ? "%" : "");
           successTimer = window.setTimeout(() => {
             clearInput();
             showDialog("#success-dialog");
           }, 1800);
         }
       }
-      accumulator -= 1 / 120;
+      accumulator -= fixedStep;
     }
-    sim?.render(accumulator / (1 / 120));
+    sim?.render(accumulator / fixedStep);
   } else accumulator = 0;
   if (ready) {
     jointNames.forEach(
@@ -692,6 +724,7 @@ function frame(now: number) {
           Math.round(THREE.MathUtils.radToDeg(machine.angles[i])) + "°"),
     );
     updateLabels();
+    updateAssistUI();
   }
   updateFireworks(dt);
   orbit.update();
@@ -705,10 +738,8 @@ async function boot() {
     createLabels();
     focus();
     updateModeUI();
-    selectPart("动臂");
     $("#loading").hidden = true;
     $<HTMLButtonElement>("#start").disabled = false;
-    $("#render-status").textContent = "鼠标与键盘，都可以探索";
   } catch (e) {
     console.error(e);
     $("#loading-message").textContent = "模型暂时没有加载成功";

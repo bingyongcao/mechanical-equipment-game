@@ -36,11 +36,24 @@ try {
     m.reset(true);
     for (let i = 0; i < 240; i++)
       m.step(new Map([["joint1", 1]]), 1 / 120, true);
+    const ground = m.blockedReason,
+      beforeSliding = m.root.position.x;
+    for (let i = 0; i < 120; i++)
+      m.step(
+        new Map([
+          ["joint1", 1],
+          ["drive", 1],
+        ]),
+        1 / 120,
+        true,
+      );
+    const groundSlide = m.root.position.x - beforeSliding;
     return {
       travel,
       nearWallValid,
       wall,
-      ground: m.blockedReason,
+      ground,
+      groundSlide,
       groundPoseValid: m.validPose(),
     };
   });
@@ -52,6 +65,10 @@ try {
   assert.ok(checks.wall.x > 8.3 && checks.wall.x < 8.8);
   assert.equal(checks.ground, "ground");
   assert.equal(checks.groundPoseValid, true);
+  assert.ok(
+    checks.groundSlide > 1,
+    "holding lower at ground contact must still allow forward travel",
+  );
   await page.evaluate(() => {
     const g = window.__builders;
     g.machine.reset(true);

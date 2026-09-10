@@ -13,9 +13,13 @@ export class Machine {
   nodes = new Map<string, THREE.Object3D>();
   angles = [0, 0, 0, 0];
   heading = 0;
+  supportHeight: ((x: number, z: number) => number) | null = null;
+  siteGuard: (() => "ground" | "wall" | "office" | null) | null = null;
   blocked = false;
   blockedReason: "ground" | "wall" | "office" | null = null;
   selected = "";
+  scoopAssist = false;
+  scoopAssistReady = false;
   colliders = physics.colliders;
   annotationNodes: { text: string; node: THREE.Object3D }[] = [];
   originals = new Map<THREE.Material, THREE.Color>();
@@ -89,6 +93,7 @@ export class Machine {
     o.updateMatrixWorld(true);
   }
   reset(site = false) {
+    this.setScoopAssist(false);
     this.blocked = false;
     this.blockedReason = null;
     this.angles = [0, 0, 0, 0];
@@ -97,44 +102,111 @@ export class Machine {
     this.pose();
   }
   step(inputs: Map<string, number>, dt: number, site: boolean) {
-    const old = this.angles.slice(),
-      pos = this.root.position.clone(),
-      heading = this.heading;
     const rates = [0.38, 0.24, 0.3, 0.42];
+    this.blockedReason = null;
+    if (!site || [1, 2, 3].some((i) => inputs.get("joint" + i)))
+      this.setScoopAssist(false);
+    const proposed = this.angles.slice();
     jointNames.forEach((_, i) => {
       const limits = rig.joints[i].limitsDegrees.map((v) =>
         THREE.MathUtils.degToRad(v),
       );
-      this.angles[i] = clamp(
+      proposed[i] = clamp(
         this.angles[i] + (inputs.get("joint" + i) || 0) * rates[i] * dt,
         limits[0],
         limits[1],
       );
     });
+    if (this.scoopAssist) {
+      const target = this.assistTarget();
+      const duration = Math.max(
+        ...[1, 2, 3].map(
+          (i) => Math.abs(target[i] - this.angles[i]) / rates[i],
+        ),
+      );
+      const fraction = duration > 0 ? Math.min(1, dt / duration) : 1;
+      for (const i of [1, 2, 3])
+        proposed[i] = this.angles[i] + (target[i] - this.angles[i]) * fraction;
+    }
+    this.moveJoints(proposed, site);
+    // A blocked alignment must not trap the machine by suppressing driving.
+    if (this.scoopAssist && this.blockedReason) this.setScoopAssist(false);
+    if (this.scoopAssist) {
+      const target = this.assistTarget();
+      this.scoopAssistReady = [1, 2, 3].every(
+        (i) => Math.abs(this.angles[i] - target[i]) < 0.002,
+      );
+    }
     if (site) {
+      const pos = this.root.position.clone(),
+        heading = this.heading;
       this.heading += (inputs.get("steer") || 0) * 0.48 * dt;
-      const drive = (inputs.get("drive") || 0) * 1.1 * dt;
+      // Finish lowering before driving into the pile with the assist enabled.
+      const drive =
+        this.scoopAssist && !this.scoopAssistReady
+          ? 0
+          : (inputs.get("drive") || 0) * 1.1 * dt;
       this.root.position.x += Math.cos(this.heading) * drive;
       this.root.position.z -= Math.sin(this.heading) * drive;
-      this.root.position.y = terrainHeight(
+      this.root.position.y = (this.supportHeight || terrainHeight)(
         this.root.position.x,
         this.root.position.z,
       );
-    }
-    this.pose();
-    this.blockedReason = site ? this.poseBlockReason() : null;
-    this.blocked = this.blockedReason !== null;
-    if (this.blocked) {
-      this.angles = old;
-      this.heading = heading;
-      this.root.position.copy(pos);
       this.pose();
+      const reason = this.poseBlockReason();
+      if (reason) {
+        this.heading = heading;
+        this.root.position.copy(pos);
+        this.pose();
+        this.blockedReason = reason;
+      }
     }
+    this.blocked = this.blockedReason !== null;
+  }
+  setScoopAssist(enabled: boolean) {
+    this.scoopAssist = enabled;
+    this.scoopAssistReady = false;
+  }
+  assistTarget() {
+    // Neutral stick and a level bucket. Solve boom elevation so the shared
+    // cutting-edge skid point sits 18mm above the flat physical ground.
+    const offset = this.node("J_Stick")
+      .position.clone()
+      .add(this.node("J_Bucket").position);
+    const pivotY =
+      this.node("J_Slew").position.y + this.node("J_Boom").position.y;
+    const height = pivotY + rig.bucketGeometry.skidPoint[1] - 0.018;
+    const boom =
+      Math.asin(clamp(height / Math.hypot(offset.x, offset.y), -1, 1)) +
+      Math.atan2(offset.y, offset.x);
+    return [this.angles[0], boom, 0, -boom];
+  }
+  moveJoints(proposed: number[], site: boolean) {
+    const old = this.angles.slice();
+    this.angles = proposed;
+    this.pose();
+    const reason = site ? this.poseBlockReason() : null;
+    if (!reason) return;
+    this.blockedReason = reason;
+    // Clip at contact rather than reverting the entire input frame. Driving
+    // is handled separately, so holding "lower" cannot freeze a ground-level pass.
+    let low = 0,
+      high = 1;
+    for (let i = 0; i < 10; i++) {
+      const t = (low + high) / 2;
+      this.angles = old.map((a, j) => a + (proposed[j] - a) * t);
+      this.pose();
+      if (this.poseBlockReason()) high = t;
+      else low = t;
+    }
+    this.angles = old.map((a, j) => a + (proposed[j] - a) * low);
+    this.pose();
   }
   validPose() {
     return this.poseBlockReason() === null;
   }
   poseBlockReason(): "ground" | "wall" | "office" | null {
+    if (this.siteGuard) return this.siteGuard();
     const p = new THREE.Vector3();
     // Guard every work-equipment collider vertex against terrain and the enclosure.
     for (const c of this.colliders) {
@@ -190,17 +262,10 @@ export class Machine {
   }
   bucketContains(world: THREE.Vector3) {
     const p = this.node("J_Bucket").worldToLocal(world.clone());
-    if (Math.abs(p.z) > 0.55) return false;
+    if (Math.abs(p.z) > rig.bucketGeometry.innerHalfWidth) return false;
     // Use the hollow bucket profile rather than a box, which would also
     // include already-unloaded rocks below the mouth when the bucket tips.
-    const outline = [
-      [-0.07, 0],
-      [-0.39, -0.37],
-      [-0.42, -0.77],
-      [-0.2, -1.09],
-      [0.26, -1.2],
-      [0.85, -1.13],
-    ];
+    const outline = rig.bucketGeometry.innerProfileXY;
     let inside = false;
     for (let i = 0, j = outline.length - 1; i < outline.length; j = i++) {
       const [xi, yi] = outline[i],

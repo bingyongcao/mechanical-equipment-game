@@ -24,9 +24,12 @@ try {
     timeout: 30000,
   });
   assert.equal(await page.locator(".part-label").count(), 7);
-  await page.getByRole("button", { name: "认识铲斗", exact: true }).click();
-  assert.match(await page.locator("#part-title").innerText(), /铲斗/);
-  await page.getByRole("button", { name: "认识动臂", exact: true }).click();
+  const bucketLabel = page.locator('.part-label[data-part="铲斗"]');
+  assert.equal(await bucketLabel.locator(".part-tooltip").isVisible(), false);
+  await bucketLabel.hover();
+  assert.equal(await bucketLabel.locator(".part-tooltip").isVisible(), true);
+  assert.match(await bucketLabel.locator(".part-tooltip").innerText(), /铲斗/);
+  await page.locator('.part-label[data-part="动臂"]').hover();
   await page.waitForTimeout(200);
   await page.screenshot({ path: "test-results/showroom.png" });
   const raise = page.getByRole("button", { name: "动臂抬起 R", exact: true });
@@ -62,6 +65,19 @@ try {
   );
   await page.waitForTimeout(500);
   await page.screenshot({ path: "test-results/site.png" });
+  const assist = page.getByRole("button", { name: "贴地铲装", exact: true });
+  await assist.click();
+  await page.waitForFunction(() => window.__builders.machine.scoopAssistReady);
+  assert.equal(await assist.getAttribute("aria-pressed"), "true");
+  assert.equal(await page.locator("#assist-state").innerText(), "已贴地");
+  await page.keyboard.down("KeyY");
+  await page.waitForTimeout(150);
+  await page.keyboard.up("KeyY");
+  await page.waitForFunction(() => !window.__builders.machine.scoopAssist);
+  assert.equal(
+    await page.evaluate(() => window.__builders.machine.scoopAssist),
+    false,
+  );
   await page.keyboard.down("KeyW");
   await page.waitForTimeout(300);
   await page.keyboard.up("KeyW");
@@ -69,24 +85,18 @@ try {
     (await page.evaluate(() => window.__builders.machine.root.position.x)) >
       -5.9,
   );
-  await page.getByRole("button", { name: "暂停游戏", exact: true }).click();
-  const before = await page.evaluate(() => window.__builders.sim.elapsed);
-  await page.waitForTimeout(250);
-  assert.equal(
-    await page.evaluate(() => window.__builders.sim.elapsed),
-    before,
-  );
-  await page.getByRole("button", { name: "继续游戏", exact: true }).click();
+  assert.equal(await page.locator("#pause").count(), 0);
+  assert.equal(await page.locator("#return-showroom").isVisible(), true);
   await page.getByRole("button", { name: "切换施工场景" }).click();
   await page.locator('[data-scene="1"]').click();
   await page.waitForFunction(
     () =>
-      window.__builders?.sim?.tracker.required === 12 &&
+      window.__builders?.sim?.tracker.required === 80 &&
       document.querySelector("#loading").hidden,
   );
   assert.equal(
     await page.evaluate(() => window.__builders.sim.rocks.length),
-    24,
+    0,
   );
   await page.getByRole("button", { name: "返回机械展厅" }).click();
   assert.equal(await page.evaluate(() => window.__builders.sim), null);
@@ -134,7 +144,7 @@ try {
   await page.screenshot({ path: "test-results/mobile.png", fullPage: true });
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: model and labels; hold/release; blur; driving; pause; both scenes; reset; physical completion fixture; fireworks; continue; mobile layout. No browser errors.",
+    "PASS: model and labels; hold/release; blur; driving; both scenes; return placement; reset; physical completion fixture; fireworks; continue; mobile layout. No browser errors.",
   );
   fs.writeFileSync(
     "test-results/browser-report.json",

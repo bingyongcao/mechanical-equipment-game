@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "units": "m",
+  "coordinates": "Y-up, X-forward",
+  "loadingPoseOnly": true,
+  "bed": {
+    "innerMin": [
+      -3,
+      1.55,
+      -1.1
+    ],
+    "innerMax": [
+      1,
+      2.95,
+      1.1
+    ],
+    "capacityM3": 12.32,
+    "targetFraction": 0.8,
+    "targetVolumeM3": 9.856
+  },
+  "joints": {
+    "tipper": "J_Tipper",
+    "tailgate": "J_Tailgate"
+  },
+  "colliders": [
+    {
+      "name": "Cab",
+      "parent": "DumpTruck",
+      "center": [
+        2.25,
+        1.92,
+        0
+      ],
+      "halfExtents": [
+        1.175,
+        1.15,
+        1.18
+      ]
+    },
+    {
+      "name": "Bed_Floor",
+      "parent": "DumpTruck",
+      "center": [
+        -1,
+        1.49,
+        0
+      ],
+      "halfExtents": [
+        2.12,
+        0.06,
+        1.22
+      ]
+    },
+    {
+      "name": "Bed_Side_-1",
+      "parent": "DumpTruck",
+      "center": [
+        -1,
+        2.25,
+        1.16
+      ],
+      "halfExtents": [
+        2.12,
+        0.7,
+        0.06
+      ]
+    },
+    {
+      "name": "Bed_Side_1",
+      "parent": "DumpTruck",
+      "center": [
+        -1,
+        2.25,
+        -1.16
+      ],
+      "halfExtents": [
+        2.12,
+        0.7,
+        0.06
+      ]
+    },
+    {
+      "name": "Bed_Front",
+      "parent": "DumpTruck",
+      "center": [
+        1.06,
+        2.25,
+        0
+      ],
+      "halfExtents": [
+        0.06,
+        0.7,
+        1.1
+      ]
+    },
+    {
+      "name": "Bed_Tailgate",
+      "parent": "DumpTruck",
+      "center": [
+        -3.06,
+        2.25,
+        0
+      ],
+      "halfExtents": [
+        0.06,
+        0.7,
+        1.1
+      ]
+    }
+  ]
+}
