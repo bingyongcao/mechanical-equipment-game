@@ -7,6 +7,7 @@ import type { Simulation } from "./physics";
 import { showroom, buildSite, disposeGroup } from "./environment";
 import { markup, icon, description } from "./ui";
 import { clamp } from "./logic.mjs";
+import { playEntry, playExit } from "./transition";
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = markup();
 const sandCard = document.querySelector('[data-scene="1"]')!;
@@ -348,6 +349,7 @@ async function enterSite(index: number) {
     orbit.target.set(-0.5, 0.5, index === 1 ? -6 : 0);
     camera.position.set(17, 19, index === 1 ? 14 : 23);
     orbit.update();
+    playEntry(machine);
     toast(
       index === 1
         ? "放低铲斗挖沙，收斗抬臂，越墙卸入卡车。"
@@ -370,6 +372,7 @@ function returnShowroom() {
   clearTimeout(successTimer);
   sim?.dispose();
   sim = null;
+  playExit(machine);
   disposeGroup(environment);
   environment = showroom();
   scene.add(environment);
@@ -383,6 +386,7 @@ function returnShowroom() {
   updateModeUI();
   focus();
   accumulator = 0;
+  playEntry(machine);
 }
 function pause(value = !isPaused) {
   isPaused = value;
@@ -406,6 +410,7 @@ $("#choose-excavator").addEventListener("click", () => {
   if (ready) {
     machine.reset(false);
     focus();
+    playEntry(machine);
   }
 });
 $("#overview").addEventListener("click", () => focus(true));
@@ -448,6 +453,7 @@ $("#reset-machine").addEventListener("click", () => {
   } else {
     machine.reset();
     focus();
+    playEntry(machine);
     toast("机械回到了初始姿态。");
   }
 });
@@ -740,6 +746,7 @@ async function boot() {
     updateModeUI();
     $("#loading").hidden = true;
     $<HTMLButtonElement>("#start").disabled = false;
+    playEntry(machine);
   } catch (e) {
     console.error(e);
     $("#loading-message").textContent = "模型暂时没有加载成功";
