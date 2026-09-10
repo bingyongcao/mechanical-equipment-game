@@ -77,8 +77,8 @@ export function markup() {
 <h1 id="side-title">机械选择</h1>
 <div id="garage-panel">
 <button class="machine-card selected" id="choose-excavator"><span class="card-top"><span class="tag">挖掘 · 搬运</span><span class="selected-dot">${icon("check", 13)}</span></span><div class="machine-thumbnail"></div><strong>履带式挖掘机</strong><span class="card-bottom">EX 200 <span>已选择 ${icon("check", 13)}</span></span></button>
-<div class="upcoming"><span class="mini-machine">▰</span><div><strong>推土机</strong><small>推平土地的大力士</small></div><span class="soon">筹备中</span></div>
 <div class="upcoming"><span class="mini-machine">♜</span><div><strong>起重机</strong><small>把梦想举得更高</small></div><span class="soon">筹备中</span></div>
+<div class="upcoming"><span class="mini-machine">🏗</span><div><strong>塔吊</strong><small>高耸的钢铁脊梁</small></div><span class="soon">筹备中</span></div>
 </div>
 <div id="mission-panel" hidden>
 <button class="back-button" id="return-showroom">${icon("arrow", 16)} 返回机械展厅</button>
