@@ -17,6 +17,11 @@ export class Simulation {
   group = new THREE.Group();
   tracker: DeliveryTracker;
   elapsed = 0;
+  // When true, the kinematic machine body is left at its last position for
+  // every `step()`. The presentation layer uses this to keep the visible
+  // model's entry/exit tween from shoving nearby rocks. Rocks keep their own
+  // physics behaviour, including gravity and damping, while paused.
+  machineSyncPaused = false;
   constructor(
     public machine: Machine,
     target: { x: number; z: number; radius: number },
@@ -160,6 +165,7 @@ export class Simulation {
     return rock;
   }
   syncMachine(teleport = false) {
+    if (this.machineSyncPaused) return;
     for (const { node, body } of this.machines) {
       const p = node.getWorldPosition(new THREE.Vector3()),
         q = node.getWorldQuaternion(new THREE.Quaternion());

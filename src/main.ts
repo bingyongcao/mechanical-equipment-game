@@ -349,7 +349,17 @@ async function enterSite(index: number) {
     orbit.target.set(-0.5, 0.5, index === 1 ? -6 : 0);
     camera.position.set(17, 19, index === 1 ? 14 : 23);
     orbit.update();
-    playEntry(machine);
+    // The entry tween shifts the model in screen-depth; the kinematic machine
+    // body would follow that and shove the rocks we've just settled. Pause
+    // the machine sync for the duration of the tween and resume on completion.
+    playEntry(machine, {
+      onBegin: () => {
+        if (sim) sim.machineSyncPaused = true;
+      },
+      onEnd: () => {
+        if (sim) sim.machineSyncPaused = false;
+      },
+    });
     toast(
       index === 1
         ? "放低铲斗挖沙，收斗抬臂，越墙卸入卡车。"

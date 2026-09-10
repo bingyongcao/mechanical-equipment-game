@@ -44,6 +44,12 @@ type Tween = {
   originalTransparent: boolean[];
   originalOpacity: number[];
   ring: Ring | null;
+  // Called when the tween starts (after snap) and when it ends. The
+  // presentation layer uses this to pause the simulation's kinematic sync
+  // so the visible tween doesn't shove nearby rocks. Optional so callers
+  // without physics can ignore it.
+  onBegin?: () => void;
+  onEnd?: () => void;
 };
 
 const tweens: Tween[] = [];
@@ -234,6 +240,7 @@ function tickTween(t: Tween, dt: number) {
         t.materialKeys,
       );
     }
+    t.onBegin?.();
   }
   const p = Math.min(1, t.elapsed / t.duration);
   if (t.kind === "in") {
@@ -294,6 +301,7 @@ function tickTween(t: Tween, dt: number) {
       t.originalTransparent,
       t.originalOpacity,
     );
+    t.onEnd?.();
     t.done = true;
   }
 }
@@ -354,7 +362,12 @@ export function installTransitionLoop() {
   requestAnimationFrame(loop);
 }
 
-function startTween(machine: Machine, kind: "in" | "out") {
+function startTween(
+  machine: Machine,
+  kind: "in" | "out",
+  onBegin?: () => void,
+  onEnd?: () => void,
+) {
   if (!machine.model) return;
   installTransitionLoop();
   if (reduced()) {
@@ -374,6 +387,7 @@ function startTween(machine: Machine, kind: "in" | "out") {
         existing.originalTransparent,
         existing.originalOpacity,
       );
+      existing.onEnd?.();
       existing.done = true;
     }
   }
@@ -388,15 +402,23 @@ function startTween(machine: Machine, kind: "in" | "out") {
     originalTransparent: transparent,
     originalOpacity: opacity,
     ring: null,
+    onBegin,
+    onEnd,
   };
   tweens.push(tween);
 }
 
-export function playEntry(machine: Machine) {
-  startTween(machine, "in");
+export function playEntry(
+  machine: Machine,
+  hooks?: { onBegin?: () => void; onEnd?: () => void },
+) {
+  startTween(machine, "in", hooks?.onBegin, hooks?.onEnd);
 }
-export function playExit(machine: Machine) {
-  startTween(machine, "out");
+export function playExit(
+  machine: Machine,
+  hooks?: { onBegin?: () => void; onEnd?: () => void },
+) {
+  startTween(machine, "out", hooks?.onBegin, hooks?.onEnd);
 }
 export function isTransitioning(machine: Machine) {
   return tweens.some((t) => t.machine === machine && !t.done);
