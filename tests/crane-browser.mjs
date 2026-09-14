@@ -43,6 +43,15 @@ try {
   assert.equal(await page.locator('[data-scene="2"]').isVisible(), true);
   await page.locator('[data-scene="2"]').click();
   await page.waitForTimeout(3000);
+  const grabKeyLayout = await page.locator("#scoop-assist").evaluate((button) => {
+    const key = button.querySelector("#grab-key").getBoundingClientRect();
+    const label = button.querySelector("strong").getBoundingClientRect();
+    const state = button.querySelector("#assist-state").getBoundingClientRect();
+    return { width: key.width, afterLabel: key.left >= label.right, beforeState: key.right <= state.left };
+  });
+  assert.ok(grabKeyLayout.width >= 38, "Space key background must cover its label");
+  assert.equal(grabKeyLayout.afterLabel, true, "Space key must sit after the action label");
+  assert.equal(grabKeyLayout.beforeState, true, "Space key must sit before the right-aligned state");
   if (!(await page.evaluate(() => Boolean(window.__builders?.craneMission))))
     console.error(await page.evaluate(() => ({ mode: window.__builders?.mode, toast: document.querySelector("#toast")?.textContent, loading: document.querySelector("#loading-message")?.textContent })));
   await page.waitForFunction(() => window.__builders?.craneMission, null, { timeout: 15000 });
