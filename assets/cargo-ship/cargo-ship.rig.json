@@ -1,0 +1,13 @@
+{
+  "units": "meters",
+  "cargo_nodes": [
+    "Cargo_1",
+    "Cargo_2",
+    "Cargo_3",
+    "Cargo_4",
+    "Cargo_5"
+  ],
+  "grab_anchor_prefix": "A_GrabPoint",
+  "deck_height_blender_z": 1.45,
+  "note": "Reparent cargo to crane hook preserving world transform on pickup; hull collider must not enclose the cargo deck."
+}

@@ -1,0 +1,26 @@
+{
+  "truck-crane": {
+    "bytes": 703204,
+    "meshes": 167,
+    "triangles": 11352,
+    "size": [
+      11.585044055377438,
+      10.601690807727799,
+      6.150000214576721
+    ],
+    "requiredNodesPassed": true,
+    "finiteGeometry": true
+  },
+  "cargo-ship": {
+    "bytes": 427588,
+    "meshes": 123,
+    "triangles": 6364,
+    "size": [
+      14.5,
+      5.039999943226576,
+      4.39279987516755
+    ],
+    "requiredNodesPassed": true,
+    "finiteGeometry": true
+  }
+}

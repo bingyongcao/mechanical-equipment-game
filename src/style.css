@@ -197,13 +197,17 @@ a {
 .machine-card {
   width: 100%;
   text-align: left;
-  border: 1.5px solid #d1a863;
+  border: 1.5px solid #dfe3d7;
   border-radius: 12px;
   padding: 14px;
-  background: #f2ecdd;
+  background: #f5f6ef;
   overflow: hidden;
   box-shadow: 0 3px 0 #e4e5db;
   transition: transform 0.2s;
+}
+.machine-card.selected {
+  border-color: #d1a863;
+  background: #f2ecdd;
 }
 .machine-card:hover {
   transform: translateY(-2px);
@@ -228,8 +232,11 @@ a {
   border-radius: 50%;
   width: 18px;
   height: 18px;
-  display: grid;
+  display: none;
   place-items: center;
+}
+.machine-card.selected .selected-dot {
+  display: grid;
 }
 .machine-thumbnail {
   height: 123px;
@@ -238,6 +245,16 @@ a {
     cover;
   border-radius: 6px;
   mix-blend-mode: multiply;
+}
+.crane-machine-card {
+  margin-top: 12px;
+}
+.crane-thumbnail {
+  background-image: url("../assets/truck-crane/truck-crane-preview.png");
+  background-position: center 52%;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-color: #aaa9a3;
 }
 .machine-card strong {
   font-size: 15px;
@@ -849,9 +866,12 @@ dialog > p {
 }
 .scene-cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 15px;
   margin-top: 25px;
+}
+#scene-dialog {
+  max-width: 920px;
 }
 .scene-card {
   text-align: left;
@@ -904,6 +924,9 @@ dialog > p {
 }
 .yard-art {
   background-image: url("../assets/scenes/materials-yard-preview.png");
+}
+.crane-art {
+  background-image: url("../assets/scenes/riverside-crane-preview.png");
 }
 .help-grid {
   display: grid;

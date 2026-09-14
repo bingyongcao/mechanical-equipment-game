@@ -12,7 +12,11 @@
 // dust ring on landing to give the arrival a tactile beat, which anatomy
 // doesn't need because its models float over a plinth.
 import * as THREE from "three";
-import type { Machine } from "./machine";
+type DisplayMachine = {
+  root: THREE.Group;
+  model: THREE.Group;
+  originals: Map<THREE.Material, THREE.Color>;
+};
 
 const reduced = () =>
   typeof matchMedia !== "undefined" &&
@@ -32,7 +36,7 @@ type Ring = {
   origin: THREE.Vector3;
 };
 type Tween = {
-  machine: Machine;
+  machine: DisplayMachine;
   kind: "in" | "out";
   duration: number;
   elapsed: number;
@@ -68,7 +72,7 @@ function easeOutBack(t: number, overshoot = 1.25) {
   return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
 }
 
-function collectMaterials(machine: Machine): {
+function collectMaterials(machine: DisplayMachine): {
   keys: THREE.MeshStandardMaterial[];
   transparent: boolean[];
   opacity: number[];
@@ -133,7 +137,7 @@ function spawnDustRing(
   };
 }
 
-function projectGround(machine: Machine, target: THREE.Vector3) {
+function projectGround(machine: DisplayMachine, target: THREE.Vector3) {
   // The dust ring hugs the tracks, not the model pivot, so we look up the
   // lowest world Y of any mesh under the model.
   const box = new THREE.Box3().setFromObject(machine.model);
@@ -165,7 +169,7 @@ const EXIT_TO = {
 };
 
 function applyEntryPose(
-  machine: Machine,
+  machine: DisplayMachine,
   scale: number,
   z: number,
   y: number,
@@ -187,7 +191,7 @@ function applyEntryPose(
 }
 
 function applyExitPose(
-  machine: Machine,
+  machine: DisplayMachine,
   scale: number,
   z: number,
   y: number,
@@ -206,7 +210,7 @@ function applyExitPose(
 }
 
 function restore(
-  machine: Machine,
+  machine: DisplayMachine,
   materials: THREE.MeshStandardMaterial[],
   originalTransparent: boolean[],
   originalOpacity: number[],
@@ -363,7 +367,7 @@ export function installTransitionLoop() {
 }
 
 function startTween(
-  machine: Machine,
+  machine: DisplayMachine,
   kind: "in" | "out",
   onBegin?: () => void,
   onEnd?: () => void,
@@ -409,17 +413,17 @@ function startTween(
 }
 
 export function playEntry(
-  machine: Machine,
+  machine: DisplayMachine,
   hooks?: { onBegin?: () => void; onEnd?: () => void },
 ) {
   startTween(machine, "in", hooks?.onBegin, hooks?.onEnd);
 }
 export function playExit(
-  machine: Machine,
+  machine: DisplayMachine,
   hooks?: { onBegin?: () => void; onEnd?: () => void },
 ) {
   startTween(machine, "out", hooks?.onBegin, hooks?.onEnd);
 }
-export function isTransitioning(machine: Machine) {
+export function isTransitioning(machine: DisplayMachine) {
   return tweens.some((t) => t.machine === machine && !t.done);
 }

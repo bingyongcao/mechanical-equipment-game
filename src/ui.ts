@@ -60,6 +60,30 @@ export const description: Record<string, { title: string; text: string }> = {
     title: "液压缸 · 伸缩的力量",
     text: "活塞杆从缸筒里伸出或缩回，推动机械的胳膊。",
   },
+  底盘与支腿: {
+    title: "底盘与支腿 · 稳固的作业基础",
+    text: "四个支腿展开并压在垫板上，吊装时车辆保持固定。",
+  },
+  回转平台: {
+    title: "回转平台 · 转向作业区域",
+    text: "带动操作室、配重和整套吊臂绕底盘中心旋转。",
+  },
+  吊臂系统: {
+    title: "吊臂系统 · 可变长度的大臂",
+    text: "箱型吊臂可以抬落，并通过三节伸缩臂改变作业半径。",
+  },
+  起升机构: {
+    title: "起升机构 · 收放钢丝绳",
+    text: "卷扬机收绳或放绳，让吊钩和物资垂直升降。",
+  },
+  钢丝绳与吊钩: {
+    title: "钢丝绳与吊钩 · 连接物资",
+    text: "吊钩接触箱顶挂点时，物资会发光并允许抓取。",
+  },
+  操作室: {
+    title: "操作室 · 起重机控制中心",
+    text: "操作员从这里观察吊钩、船舶和岸边卸货位置。",
+  },
 };
 export function markup() {
   const jointControls = [
@@ -77,7 +101,7 @@ export function markup() {
 <h1 id="side-title">机械选择</h1>
 <div id="garage-panel">
 <button class="machine-card selected" id="choose-excavator"><span class="card-top"><span class="tag">挖掘 · 搬运</span><span class="selected-dot">${icon("check", 13)}</span></span><div class="machine-thumbnail"></div><strong>履带式挖掘机</strong><span class="card-bottom">EX 200 <span>已选择 ${icon("check", 13)}</span></span></button>
-<div class="upcoming"><span class="mini-machine">♜</span><div><strong>起重机</strong><small>把梦想举得更高</small></div><span class="soon">筹备中</span></div>
+<button class="machine-card crane-machine-card" id="choose-crane"><span class="card-top"><span class="tag">起升 · 回转</span><span class="selected-dot">${icon("check", 13)}</span></span><div class="machine-thumbnail crane-thumbnail"></div><strong>汽车起重机</strong><span class="card-bottom">TC 80 <span>点击选择</span></span></button>
 <div class="upcoming"><span class="mini-machine">🏗</span><div><strong>塔吊</strong><small>高耸的钢铁脊梁</small></div><span class="soon">筹备中</span></div>
 </div>
 <div id="mission-panel" hidden>
@@ -101,13 +125,13 @@ export function markup() {
 <div class="panel-title"><span>${icon("helmet", 19)} 驾驶室</span><span class="panel-mode">键盘 / 按钮</span></div>
 <section class="control-card drive-section"><div class="control-label"><strong>行走</strong><span>W A S D</span></div><div class="drive-controls"><button class="drive-forward" data-action="drive" data-sign="1" aria-label="前进 W"><span>↑</span><small>前进</small><kbd>W</kbd></button><button class="drive-left" data-action="steer" data-sign="1" aria-label="底盘左转 A"><span>↶</span><small>左转</small><kbd>A</kbd></button><button class="drive-back" data-action="drive" data-sign="-1" aria-label="后退 S"><span>↓</span><small>后退</small><kbd>S</kbd></button><button class="drive-right" data-action="steer" data-sign="-1" aria-label="底盘右转 D"><span>↷</span><small>右转</small><kbd>D</kbd></button></div><small id="drive-hint">进入工地后可驾驶。</small></section>
 <section class="control-card work-section"><div class="section-heading"><strong>工作装置</strong><span>Q — H</span></div>
-<div class="assist-controls"><button id="scoop-assist" aria-label="贴地铲装" aria-pressed="false" disabled>${icon("target", 16)} <strong>贴地铲装</strong><span id="assist-state">关闭</span></button><small id="assist-hint">自动调整到装料姿态。</small></div>
+<div class="assist-controls"><button id="scoop-assist" aria-label="贴地铲装" aria-pressed="false" disabled>${icon("target", 16)} <strong>贴地铲装</strong><span id="assist-state">关闭</span><kbd id="grab-key" hidden>Space</kbd></button><small id="assist-hint">自动调整到装料姿态。</small></div>
 <div class="joint-controls">${jointControls.map(([title, action, k1, k2, t1, t2], i) => `<div class="joint-row"><div class="control-label"><strong>${title}</strong><span id="angle${i}">0°</span></div><div class="button-pair"><button data-action="${action}" data-sign="${i > 0 ? -1 : 1}" aria-label="${title}${t1} ${k1}"><span>${t1}</span><kbd>${k1}</kbd></button><button data-action="${action}" data-sign="${i > 0 ? 1 : -1}" aria-label="${title}${t2} ${k2}"><span>${t2}</span><kbd>${k2}</kbd></button></div></div>`).join("")}</div></section>
 </div>
 <div class="start-card"><button id="start" class="primary-button" disabled>去工地试一试 ${icon("arrow", 18)}</button></div>
 </aside>
 </main>
-<dialog id="scene-dialog"><button class="dialog-close icon-button" data-close aria-label="关闭">${icon("close")}</button><div class="eyebrow">YOUR NEXT ADVENTURE</div><h2>选一份工程，出发吧。</h2><p class="muted">同一台挖掘机，不一样的小挑战。</p><div class="scene-cards"><button class="scene-card" data-scene="0"><div class="scene-art city-art" role="img" aria-label="挖掘机在城市建筑工地搬运石料"></div><span class="tag">第一站 · 轻松上手</span><h3>城市建筑工地</h3><p>在高楼之间，把 8 块石头送到指定区域。</p><strong>开始施工 ${icon("arrow", 16)}</strong></button><button class="scene-card" data-scene="1"><div class="scene-art yard-art" role="img" aria-label="挖掘机在材料场向工程车装载砂石"></div><span class="tag">第二站 · 再试一次</span><h3>工地材料整理</h3><p>换个卸料方向，练习搬运 12 块石头。</p><strong>接受挑战 ${icon("arrow", 16)}</strong></button></div></dialog>
+<dialog id="scene-dialog"><button class="dialog-close icon-button" data-close aria-label="关闭">${icon("close")}</button><div class="eyebrow">YOUR NEXT ADVENTURE</div><h2>选一份工程，出发吧。</h2><p class="muted">选择机械，完成不同的工程挑战。</p><div class="scene-cards"><button class="scene-card" data-scene="0"><div class="scene-art city-art" role="img" aria-label="挖掘机在城市建筑工地搬运石料"></div><span class="tag">第一站 · 轻松上手</span><h3>城市建筑工地</h3><p>在高楼之间，把 8 块石头送到指定区域。</p><strong>开始施工 ${icon("arrow", 16)}</strong></button><button class="scene-card" data-scene="1"><div class="scene-art yard-art" role="img" aria-label="挖掘机在材料场向工程车装载砂石"></div><span class="tag">第二站 · 沙土作业</span><h3>砂料厂 · 装车</h3><p>挖掘沙层并越过围墙，把卡车装载至 80%。</p><strong>接受挑战 ${icon("arrow", 16)}</strong></button><button class="scene-card crane-scene-card" data-scene="2"><div class="scene-art crane-art" role="img" aria-label="汽车起重机在河岸吊运货船上的物资"></div><span class="tag">第三站 · 精准吊装</span><h3>河岸运输任务</h3><p>操纵汽车起重机，把船上的 5 箱物资吊到岸边。</p><strong>开始吊装 ${icon("arrow", 16)}</strong></button></div></dialog>
 <dialog id="help-dialog"><button class="dialog-close icon-button" data-close aria-label="关闭">${icon("close")}</button><div class="eyebrow">LITTLE BUILDER'S HANDBOOK</div><h2>慢慢来，你就是工程师。</h2><p>鼠标拖动画面可以环绕，滚轮缩放，右键拖动平移。按住右侧按钮，机械就会持续动作，松开即停。</p><div class="help-grid"><p><b>W / S</b>前进 / 后退</p><p><b>A / D</b>底盘左转 / 右转</p><p><b>Q / E</b>上车左回转 / 右回转</p><p><b>R / F</b>动臂抬起 / 放下</p><p><b>T / G</b>斗杆伸出 / 收回</p><p><b>Y / H</b>铲斗收斗 / 翻斗</p></div><p class="help-tip">把铲斗放低，朝石头前进，再慢慢收斗、抬臂。运到绿色圆圈上方，翻斗卸下。无需赶时间，也不怕重来。</p><button class="primary-button" data-close>我知道啦 ${icon("check", 17)}</button></dialog>
 <dialog id="success-dialog"><div class="success-mark">${icon("helmet", 42)}</div><div class="eyebrow">MISSION ACCOMPLISHED</div><h2>干得漂亮，小工程师！</h2><p>石头都到达了新家。<br/>你用自己的双手，完成了一份了不起的工程。</p><div class="success-stats"><div><b id="success-count">8</b><span>块石头成功送达</span></div><div><b>★ ★ ★</b><span>今天的机械小能手</span></div></div><button class="primary-button" id="keep-playing">继续自由探索 ${icon("arrow", 18)}</button><button class="text-button" id="another-scene">再选一个任务</button></dialog>
 `;

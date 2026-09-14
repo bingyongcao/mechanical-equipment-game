@@ -1,0 +1,53 @@
+{
+  "units": "meters",
+  "blender_axes": "X forward, Z up",
+  "gltf_axes": "X forward, Y up; (x,y,z) -> (x,z,-y)",
+  "controls": {
+    "slew": {
+      "node": "J_Slew",
+      "blender_axis": "Z",
+      "gltf_axis": "Y"
+    },
+    "boom": {
+      "node": "J_BoomPitch",
+      "blender_axis": "Y",
+      "gltf_axis": "Z",
+      "blender_limits_degrees": [
+        -75,
+        -15
+      ]
+    },
+    "telescope": {
+      "nodes": [
+        "J_Telescope_1",
+        "J_Telescope_2",
+        "J_Telescope_3"
+      ],
+      "axis": "X",
+      "local_translation_limits": [
+        0.6,
+        2.6
+      ]
+    },
+    "hoist": {
+      "node": "J_Hook",
+      "rope": "WireRope",
+      "vertical_frame": "J_RopeVertical",
+      "length_limits": [
+        0.8,
+        12
+      ],
+      "rest_length": 4.2
+    }
+  },
+  "attachments": {
+    "tip": "A_BoomTip",
+    "cargo": "A_CargoAttach"
+  },
+  "runtime_required": [
+    "Keep J_RopeVertical world rotation aligned to TruckCrane; Blender constraint is not exported",
+    "Change WireRope midpoint/scale together with J_Hook position",
+    "Update hydraulic mount aim and piston extension after boom pitch changes",
+    "Implement collisions and grab/release in game; no game code is changed"
+  ]
+}

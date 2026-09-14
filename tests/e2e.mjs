@@ -50,7 +50,7 @@ try {
   await page.keyboard.up("KeyG");
   assert.equal(await page.evaluate(() => window.__builders.held), 0);
   await page.getByRole("button", { name: "机械复位", exact: true }).click();
-  await page.getByRole("button", { name: "去工地试一试" }).click();
+  await page.locator("#start").click();
   await page.locator('[data-scene="0"]').click();
   await page.waitForFunction(
     () =>
