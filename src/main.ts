@@ -4,6 +4,8 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { Machine, jointNames } from "./machine";
 import { CraneMachine } from "./crane-machine";
+import { TowerMachine, materialNames } from "./tower-machine";
+import type { TowerMission } from "./tower-site";
 import type { Simulation } from "./physics";
 import { showroom, buildSite, disposeGroup } from "./environment";
 import { markup, icon, description } from "./ui";
@@ -72,7 +74,9 @@ env.dispose();
 pmrem.dispose();
 const machine = new Machine();
 const craneMachine = new CraneMachine();
-scene.add(machine.root, craneMachine.root);
+const towerMachine = new TowerMachine();
+scene.add(machine.root, craneMachine.root, towerMachine.root);
+towerMachine.root.visible = false;
 craneMachine.root.visible = false;
 let environment = showroom();
 scene.add(environment);
@@ -80,8 +84,9 @@ scene.background = new THREE.Color("#e9e6de");
 scene.fog = new THREE.Fog("#e9e6de", 45, 140);
 let sim: Simulation | null = null,
   craneMission: CraneMission | null = null,
+  towerMission: TowerMission | null = null,
   mode: "showroom" | "site" = "showroom",
-  selectedMachine: "excavator" | "crane" = "excavator",
+  selectedMachine: "excavator" | "crane" | "tower" = "excavator",
   variant = 0,
   ready = false,
   busy = false,
@@ -163,9 +168,29 @@ document.querySelectorAll("dialog").forEach((d) => {
   });
 });
 function focus(overhead = false) {
+  orbit.maxDistance = selectedMachine === "tower" ? 170 : 55;
+  if (selectedMachine === "tower") {
+    const site = mode === "site";
+    orbit.target.set(site ? 6 : 4, site ? 12 : 16, 0);
+    const aspect = Math.max(0.4, camera.aspect);
+    const distance = site ? (overhead ? 110 : 78) : Math.max(65, 42 / aspect);
+    camera.position
+      .copy(orbit.target)
+      .add(
+        new THREE.Vector3(overhead ? 0.1 : 0.7, overhead ? 1.2 : 0.48, 1)
+          .normalize()
+          .multiplyScalar(distance),
+      );
+    orbit.update();
+    return;
+  }
   if (mode === "site" && variant === 2) {
     orbit.target.set(0.8, 2.1, 0.8);
-    camera.position.set(overhead ? 1 : 19, overhead ? 30 : 15, overhead ? 22 : -21);
+    camera.position.set(
+      overhead ? 1 : 19,
+      overhead ? 30 : 15,
+      overhead ? 22 : -21,
+    );
     orbit.update();
     return;
   }
@@ -204,7 +229,11 @@ function resize() {
 }
 new ResizeObserver(resize).observe(viewport);
 function activeDisplayMachine() {
-  return selectedMachine === "crane" ? craneMachine : machine;
+  return selectedMachine === "tower"
+    ? towerMachine
+    : selectedMachine === "crane"
+      ? craneMachine
+      : machine;
 }
 function selectPart(label: string) {
   activeDisplayMachine().highlight(label);
@@ -265,35 +294,62 @@ function updateLabels() {
     p.button.style.top = p.y + "px";
     p.button.classList.toggle("align-right", p.x > w * 0.65);
   }
-  const activeTarget = sim?.tracker.target || craneMission?.target;
+  const activeTarget =
+    sim?.tracker.target || craneMission?.target || towerMission?.target;
   if (activeTarget && mode === "site") {
     const p = new THREE.Vector3(
       activeTarget.x,
-      variant === 1 ? 3.5 : 0.55,
+      towerMission ? towerMission.roofY + 1 : variant === 1 ? 3.5 : 0.55,
       activeTarget.z,
     ).project(camera);
-    $("#target-label").hidden = p.z > 1;
+    $("#target-label").hidden = p.z > 1 || !!towerMission?.completed;
     $("#target-label").style.left = (p.x * 0.5 + 0.5) * w + "px";
     $("#target-label").style.top = (-p.y * 0.5 + 0.5) * h + "px";
   } else $("#target-label").hidden = true;
 }
 function updateModeUI() {
   const crane = mode === "site" ? variant === 2 : selectedMachine === "crane";
-  renderer.domElement.setAttribute("aria-label", crane ? "可旋转和缩放的汽车起重机河岸作业场景" : "可旋转和缩放的挖掘机三维模型");
+  const tower = selectedMachine === "tower";
+  document.body.dataset.machine = selectedMachine;
+  $<HTMLSelectElement>("#machine-select").value = selectedMachine;
+  $("#mobile-machine-picker").hidden = mode !== "showroom";
+  $("#tower-task").hidden = !tower || mode !== "site";
+  $("#tower-views").hidden = !tower || mode !== "site";
+  renderer.domElement.setAttribute(
+    "aria-label",
+    crane
+      ? "可旋转和缩放的汽车起重机河岸作业场景"
+      : "可旋转和缩放的挖掘机三维模型",
+  );
   document.body.dataset.mode = mode;
-  $("#choose-excavator").classList.toggle("selected", selectedMachine === "excavator");
+  $("#choose-excavator").classList.toggle(
+    "selected",
+    selectedMachine === "excavator",
+  );
   $("#choose-crane").classList.toggle("selected", selectedMachine === "crane");
-  $("#choose-excavator .card-bottom span").innerHTML = selectedMachine === "excavator" ? `已选择 ${icon("check", 13)}` : "点击选择";
-  $("#choose-crane .card-bottom span").innerHTML = selectedMachine === "crane" ? `已选择 ${icon("check", 13)}` : "点击选择";
-  $("#start").innerHTML = `确认${crane ? "起重机" : "挖掘机"} · 选择场景 ${icon("arrow", 18)}`;
+  $("#choose-tower").classList.toggle("selected", tower);
+  $("#choose-tower .card-bottom span").innerHTML = tower
+    ? `已选择 ${icon("check", 13)}`
+    : "点击选择";
+  $("#choose-excavator .card-bottom span").innerHTML =
+    selectedMachine === "excavator"
+      ? `已选择 ${icon("check", 13)}`
+      : "点击选择";
+  $("#choose-crane .card-bottom span").innerHTML =
+    selectedMachine === "crane" ? `已选择 ${icon("check", 13)}` : "点击选择";
+  $("#start").innerHTML =
+    `确认${tower ? "塔吊" : crane ? "起重机" : "挖掘机"} · 选择场景 ${icon("arrow", 18)}`;
   $("#garage-panel").hidden = mode === "site";
   $("#mission-panel").hidden = mode !== "site";
   $("#side-title").hidden = mode === "site";
   $("#step1").classList.toggle("active", mode === "showroom");
   $("#step2").classList.toggle("active", mode === "site");
   $("#start").hidden = mode === "site";
-  $("#drive-hint").textContent =
-    crane ? "支腿已经固定，车辆不可移动。" : mode === "site" ? "左右履带配合，慢慢转弯。" : "进入工地后，就能开动履带。";
+  $("#drive-hint").textContent = crane
+    ? "支腿已经固定，车辆不可移动。"
+    : mode === "site"
+      ? "左右履带配合，慢慢转弯。"
+      : "进入工地后，就能开动履带。";
   $("#reset-machine").innerHTML =
     icon("rotate", 15) + (mode === "site" ? "重新开始" : "机械复位");
   $("#overview").hidden = mode !== "site";
@@ -301,10 +357,18 @@ function updateModeUI() {
     .querySelectorAll<HTMLButtonElement>(
       '[data-action="drive"],[data-action="steer"]',
     )
-    .forEach((b) => (b.disabled = mode !== "site" || crane));
-  $("#mission-name").textContent = crane ? "河岸 · 物资吊运" : variant ? "砂料厂 · 装车" : "城市工地";
+    .forEach((b) => (b.disabled = mode !== "site" || crane || tower));
+  $("#mission-name").textContent = crane
+    ? "河岸 · 物资吊运"
+    : variant
+      ? "砂料厂 · 装车"
+      : "城市工地";
   $("#required").textContent = crane ? "5" : variant ? "80%" : "8";
-  $(".progress-caption > span").textContent = crane ? "物资搬运进度" : variant ? "车厢装载率" : "搬运进度";
+  $(".progress-caption > span").textContent = crane
+    ? "物资搬运进度"
+    : variant
+      ? "车厢装载率"
+      : "搬运进度";
   document
     .querySelectorAll(".mission-steps b")
     .forEach(
@@ -313,28 +377,70 @@ function updateModeUI() {
           crane
             ? ["对准并抓取箱子", "平稳回转到岸边", "低位释放到绿框"]
             : variant
-            ? ["挖沙并收斗", "抬臂越过围墙", "卸入车厢至 80%"]
-            : ["装载石头", "移动到绿圈", "卸下并停稳"]
+              ? ["挖沙并收斗", "抬臂越过围墙", "卸入车厢至 80%"]
+              : ["装载石头", "移动到绿圈", "卸下并停稳"]
         )[i]),
     );
-  $("#success-count + span").textContent = crane ? "箱物资成功上岸" : variant ? "车厢装载率" : "块石头成功送达";
-  $("#success-dialog > p").innerHTML = crane ? "船上的物资已经全部安全运到岸边。" : variant ? "卡车已装载至 80%，装沙任务完成。" : "石头都到达了新家。<br/>你用自己的双手，完成了一份了不起的工程。";
-  $(".help-tip").textContent = crane ? "回转并调节吊臂，让吊钩接触箱子顶部。箱子发光后抓取，提升并回转到岸边绿框，低位释放。" : variant ? "放低动臂进入沙层，向前推进，再收斗、抬臂。靠近卡车后配合伸出斗杆抬高铲斗，越过围墙和车厢边缘，再翻斗卸沙。撒在道路上的沙不计入装载率。" : "把铲斗放低，朝石头前进，再慢慢收斗、抬臂。运到绿色圆圈上方，翻斗卸下。";
+  $("#success-count + span").textContent = crane
+    ? "箱物资成功上岸"
+    : variant
+      ? "车厢装载率"
+      : "块石头成功送达";
+  $("#success-dialog > p").innerHTML = crane
+    ? "船上的物资已经全部安全运到岸边。"
+    : variant
+      ? "卡车已装载至 80%，装沙任务完成。"
+      : "石头都到达了新家。<br/>你用自己的双手，完成了一份了不起的工程。";
+  $(".help-tip").textContent = crane
+    ? "回转并调节吊臂，让吊钩接触箱子顶部。箱子发光后抓取，提升并回转到岸边绿框，低位释放。"
+    : variant
+      ? "放低动臂进入沙层，向前推进，再收斗、抬臂。靠近卡车后配合伸出斗杆抬高铲斗，越过围墙和车厢边缘，再翻斗卸沙。撒在道路上的沙不计入装载率。"
+      : "把铲斗放低，朝石头前进，再慢慢收斗、抬臂。运到绿色圆圈上方，翻斗卸下。";
   const helpCopy = crane
-    ? [["Q / E", "回转平台左转 / 右转"], ["R / F", "吊臂抬起 / 放下"], ["T / G", "伸缩臂伸出 / 缩回"], ["Y / H", "吊钩上升 / 下降"], ["Space", "抓取发光的物资箱"], ["Space", "在绿色框内释放物资"]]
-    : [["W / S", "前进 / 后退"], ["A / D", "底盘左转 / 右转"], ["Q / E", "上车左回转 / 右回转"], ["R / F", "动臂抬起 / 放下"], ["T / G", "斗杆伸出 / 收回"], ["Y / H", "铲斗收斗 / 翻斗"]];
+    ? [
+        ["Q / E", "回转平台左转 / 右转"],
+        ["R / F", "吊臂抬起 / 放下"],
+        ["T / G", "伸缩臂伸出 / 缩回"],
+        ["Y / H", "吊钩上升 / 下降"],
+        ["Space", "抓取发光的物资箱"],
+        ["Space", "在绿色框内释放物资"],
+      ]
+    : [
+        ["W / S", "前进 / 后退"],
+        ["A / D", "底盘左转 / 右转"],
+        ["Q / E", "上车左回转 / 右回转"],
+        ["R / F", "动臂抬起 / 放下"],
+        ["T / G", "斗杆伸出 / 收回"],
+        ["Y / H", "铲斗收斗 / 翻斗"],
+      ];
   document.querySelectorAll<HTMLElement>(".help-grid p").forEach((p, i) => {
     p.innerHTML = `<b>${helpCopy[i][0]}</b>${helpCopy[i][1]}`;
   });
   const jointCopy = crane
-    ? [["回转平台", "左转", "右转"], ["吊臂变幅", "抬起", "放下"], ["伸缩吊臂", "伸出", "缩回"], ["起升机构", "上升", "下降"]]
-    : [["回转", "左转", "右转"], ["动臂", "抬起", "放下"], ["斗杆", "伸出", "收回"], ["铲斗", "收斗", "翻斗"]];
+    ? [
+        ["回转平台", "左转", "右转"],
+        ["吊臂变幅", "抬起", "放下"],
+        ["伸缩吊臂", "伸出", "缩回"],
+        ["起升机构", "上升", "下降"],
+      ]
+    : [
+        ["回转", "左转", "右转"],
+        ["动臂", "抬起", "放下"],
+        ["斗杆", "伸出", "收回"],
+        ["铲斗", "收斗", "翻斗"],
+      ];
   document.querySelectorAll<HTMLElement>(".joint-row").forEach((row, i) => {
+    row.hidden = tower && i === 1;
+    row
+      .querySelectorAll<HTMLButtonElement>("button")
+      .forEach((b) => (b.disabled = tower && i === 1));
     row.querySelector(".control-label strong")!.textContent = jointCopy[i][0];
-    row.querySelectorAll<HTMLButtonElement>(".button-pair button").forEach((button, j) => {
-      button.querySelector("span")!.textContent = jointCopy[i][j + 1];
-      button.ariaLabel = `${jointCopy[i][0]}${jointCopy[i][j + 1]} ${button.querySelector("kbd")!.textContent}`;
-    });
+    row
+      .querySelectorAll<HTMLButtonElement>(".button-pair button")
+      .forEach((button, j) => {
+        button.querySelector("span")!.textContent = jointCopy[i][j + 1];
+        button.ariaLabel = `${jointCopy[i][0]}${jointCopy[i][j + 1]} ${button.querySelector("kbd")!.textContent}`;
+      });
   });
   compactMission.hidden = mode !== "site";
   compactMission.textContent =
@@ -347,9 +453,59 @@ function updateModeUI() {
     compactMission.textContent = `车厢 ${sim?.tracker.count || 0}% / 80% · 挖沙装车`;
   if (crane)
     compactMission.textContent = `已吊运 ${craneMission?.count || 0} / 5 箱 · 河岸作业`;
+  if (tower) {
+    renderer.domElement.setAttribute(
+      "aria-label",
+      "可旋转和缩放的塔吊三维模型与小区施工场景",
+    );
+    $("#drive-hint").textContent =
+      "塔吊固定在基座上，通过回转、小车和吊钩搬运。";
+    $("#mission-name").textContent = "小区 · 楼栋建设";
+    $("#required").textContent = "5";
+    $(".progress-caption > span").textContent = "已新建楼层";
+    document
+      .querySelectorAll(".mission-steps b")
+      .forEach(
+        (o, i) =>
+          (o.textContent = [
+            "抓取最上层材料",
+            "送到楼顶同名区域",
+            "收齐三类，升钩增层",
+          ][i]),
+      );
+    $("#success-count + span").textContent = "层新楼建设完成";
+    $("#success-dialog > p").textContent =
+      "15 份材料全部送达，楼栋从 2 层建成了 7 层！";
+    $(".help-tip").textContent =
+      "每层需要钢筋、砖头、石膏板各一份。对准顶层吊环，按 Space 抓取；先升高越过楼体，再对准同名区域低位释放。三种材料齐备后升起吊钩，楼栋自动增加一层。共可增加 5 层。";
+    const copy = [
+      ["Q / E", "塔吊左转 / 右转"],
+      ["T / G", "小车向外 / 向内"],
+      ["Y / H", "吊钩上升 / 下降"],
+      ["Space", "抓取 / 低位释放"],
+      ["视角按钮", "全景 / 料场 / 楼顶"],
+      ["放回原位", "退回当前吊物，不扣库存"],
+    ];
+    document
+      .querySelectorAll<HTMLElement>(".help-grid p")
+      .forEach((p, i) => (p.innerHTML = `<b>${copy[i][0]}</b>${copy[i][1]}`));
+    const rows = document.querySelectorAll<HTMLElement>(".joint-row");
+    rows[0].querySelector("strong")!.textContent = "回转平台";
+    rows[2].querySelector("strong")!.textContent = "变幅小车";
+    rows[3].querySelector("strong")!.textContent = "起重吊钩";
+    for (const [i, words] of [
+      [2, ["向外", "向内"]],
+      [3, ["上升", "下降"]],
+    ] as const)
+      rows[i].querySelectorAll<HTMLButtonElement>("button").forEach((b, j) => {
+        b.querySelector("span")!.textContent = words[j];
+        b.ariaLabel = `${rows[i].querySelector("strong")!.textContent}${words[j]} ${b.querySelector("kbd")!.textContent}`;
+      });
+    updateTowerUI();
+  }
 }
 async function enterSite(index: number) {
-  if (!ready || busy) return;
+  if (!ready || busy || ![0, 1, 2, 3].includes(index)) return;
   busy = true;
   clearInput();
   clearTimeout(successTimer);
@@ -359,27 +515,39 @@ async function enterSite(index: number) {
     sim?.dispose();
     sim = null;
     disposeGroup(environment);
+    towerMission = null;
     craneMission = null;
     variant = index;
-    selectedMachine = index === 2 ? "crane" : "excavator";
+    selectedMachine =
+      index === 3 ? "tower" : index === 2 ? "crane" : "excavator";
     mode = "site";
-    machine.root.visible = index !== 2;
+    machine.root.visible = index < 2;
     craneMachine.root.visible = false;
+    towerMachine.root.visible = false;
     machine.reset(true);
     machine.highlight("");
-    const site = index === 2
-      ? await new (await import("./crane-site")).CraneMission().load()
-      : index === 1
-        ? await (await import("./sand-site")).buildSandSite()
-        : buildSite(0);
+    const site =
+      index === 3
+        ? await new (await import("./tower-site")).TowerMission().load()
+        : index === 2
+          ? await new (await import("./crane-site")).CraneMission().load()
+          : index === 1
+            ? await (await import("./sand-site")).buildSandSite()
+            : buildSite(0);
     if (index === 2) craneMission = site as CraneMission;
+    if (index === 3) towerMission = site as TowerMission;
     environment = site.group;
     scene.add(environment);
-    if (index !== 2) {
+    if (index < 2) {
       const { Simulation } = await import("./physics");
-      sim = index === 1
-        ? new (await import("./sand")).SandSimulation(machine, site.target, 80)
-        : new Simulation(machine, site.target, 8);
+      sim =
+        index === 1
+          ? new (await import("./sand")).SandSimulation(
+              machine,
+              site.target,
+              80,
+            )
+          : new Simulation(machine, site.target, 8);
       await sim.init(index);
       scene.add(sim.group);
       for (let i = 0; i < 150; i++) sim.step();
@@ -388,12 +556,16 @@ async function enterSite(index: number) {
     labelsOn = false;
     isPaused = false;
     scene.background = new THREE.Color("#d8e4de");
-    scene.fog = new THREE.Fog("#d8e4de", 48, 135);
+    scene.fog = new THREE.Fog(
+      "#d8e4de",
+      index === 3 ? 100 : 48,
+      index === 3 ? 220 : 135,
+    );
     $("#delivered").textContent = "0";
     lastCount = -1;
     $("#progress-fill").style.width = "0%";
     updateModeUI();
-    if (index === 2) focus();
+    if (index >= 2) focus();
     else {
       orbit.target.set(-0.5, 0.5, index === 1 ? -6 : 0);
       camera.position.set(17, 19, index === 1 ? 14 : 23);
@@ -402,25 +574,29 @@ async function enterSite(index: number) {
     // The entry tween shifts the model in screen-depth; the kinematic machine
     // body would follow that and shove the rocks we've just settled. Pause
     // the machine sync for the duration of the tween and resume on completion.
-    if (index !== 2) playEntry(machine, {
-      onBegin: () => {
-        if (sim) sim.machineSyncPaused = true;
-      },
-      onEnd: () => {
-        if (sim) sim.machineSyncPaused = false;
-      },
-    });
+    if (index < 2)
+      playEntry(machine, {
+        onBegin: () => {
+          if (sim) sim.machineSyncPaused = true;
+        },
+        onEnd: () => {
+          if (sim) sim.machineSyncPaused = false;
+        },
+      });
     toast(
-      index === 2
-        ? "吊钩接触箱子后会发光，点击抓取，再吊到岸边绿框。"
-        : index === 1
-        ? "放低铲斗挖沙，收斗抬臂，越墙卸入卡车。"
-        : "欢迎来到工地！先试着前进，靠近石堆。",
+      index === 3
+        ? "从料垛顶层抓取材料，运到楼顶同名区域。每种一份即可增加一层。"
+        : index === 2
+          ? "吊钩接触箱子后会发光，点击抓取，再吊到岸边绿框。"
+          : index === 1
+            ? "放低铲斗挖沙，收斗抬臂，越墙卸入卡车。"
+            : "欢迎来到工地！先试着前进，靠近石堆。",
       4500,
     );
   } catch (e) {
     console.error(e);
     toast("场景加载失败，请重试。", 8000);
+    busy = false;
     returnShowroom();
   } finally {
     busy = false;
@@ -430,11 +606,13 @@ async function enterSite(index: number) {
   }
 }
 function returnShowroom() {
+  if (busy) return;
   clearInput();
   clearTimeout(successTimer);
   sim?.dispose();
   sim = null;
   craneMission = null;
+  towerMission = null;
   if (machine.root.visible) playExit(machine);
   disposeGroup(environment);
   environment = showroom();
@@ -442,8 +620,10 @@ function returnShowroom() {
   mode = "showroom";
   machine.root.visible = selectedMachine === "excavator";
   craneMachine.root.visible = selectedMachine === "crane";
+  towerMachine.root.visible = selectedMachine === "tower";
   machine.reset(false);
   craneMachine.reset();
+  towerMachine.reset();
   activeDisplayMachine().highlight("");
   createLabels();
   labelsOn = true;
@@ -463,12 +643,20 @@ function pause(value = !isPaused) {
 }
 function prepareSceneDialog() {
   document.querySelectorAll<HTMLElement>("[data-scene]").forEach((card) => {
-    const craneScene = card.dataset.scene === "2";
-    card.hidden = selectedMachine === "crane" ? !craneScene : craneScene;
+    const index = Number(card.dataset.scene);
+    card.hidden =
+      selectedMachine === "tower"
+        ? index !== 3
+        : selectedMachine === "crane"
+          ? index !== 2
+          : index >= 2;
   });
-  $("#scene-dialog .muted").textContent = selectedMachine === "crane"
-    ? "为汽车起重机选择河岸吊装任务。"
-    : "为履带式挖掘机选择施工任务。";
+  $("#scene-dialog .muted").textContent =
+    selectedMachine === "tower"
+      ? "为塔吊选择小区楼栋建设任务。"
+      : selectedMachine === "crane"
+        ? "为汽车起重机选择河岸吊装任务。"
+        : "为履带式挖掘机选择施工任务。";
 }
 $("#start").addEventListener("click", () => {
   prepareSceneDialog();
@@ -486,11 +674,12 @@ document.querySelectorAll<HTMLButtonElement>("[data-scene]").forEach((b) =>
   }),
 );
 $("#help").addEventListener("click", () => showDialog("#help-dialog"));
-function chooseMachine(kind: "excavator" | "crane") {
+function chooseMachine(kind: "excavator" | "crane" | "tower") {
   if (!ready || busy || mode !== "showroom" || selectedMachine === kind) return;
   selectedMachine = kind;
   machine.root.visible = kind === "excavator";
   craneMachine.root.visible = kind === "crane";
+  towerMachine.root.visible = kind === "tower";
   activeDisplayMachine().reset();
   activeDisplayMachine().highlight("");
   createLabels();
@@ -498,24 +687,109 @@ function chooseMachine(kind: "excavator" | "crane") {
   focus();
   playEntry(activeDisplayMachine());
 }
-$("#choose-excavator").addEventListener("click", () => chooseMachine("excavator"));
+$("#choose-excavator").addEventListener("click", () =>
+  chooseMachine("excavator"),
+);
 $("#choose-crane").addEventListener("click", () => chooseMachine("crane"));
+$("#choose-tower").addEventListener("click", () => chooseMachine("tower"));
+$("#machine-select").addEventListener("change", (e) =>
+  chooseMachine(
+    (e.target as HTMLSelectElement).value as typeof selectedMachine,
+  ),
+);
 $("#overview").addEventListener("click", () => focus(true));
-function toggleCraneCargo() {
-  if (!ready || busy || isPaused || mode !== "site" || variant !== 2 || !craneMission) return;
+let towerView: "overview" | "stock" | "roof" = "overview";
+function focusTowerView(view: typeof towerView) {
+  if (!towerMission) return;
+  towerView = view;
+  if (view === "overview") {
+    focus(true);
+    return;
+  }
+  const target =
+    view === "stock"
+      ? new THREE.Vector3(10, 3, 10)
+      : new THREE.Vector3(12, towerMission.roofY, -3);
+  orbit.target.copy(target);
+  camera.position
+    .copy(target)
+    .add(
+      view === "stock"
+        ? new THREE.Vector3(13, 12, 21)
+        : new THREE.Vector3(10, 20, 22),
+    );
+  orbit.update();
+}
+document
+  .querySelectorAll<HTMLButtonElement>("[data-tower-view]")
+  .forEach((b) =>
+    b.addEventListener("click", () =>
+      focusTowerView(b.dataset.towerView as typeof towerView),
+    ),
+  );
+$("#return-cargo").addEventListener("click", () => {
+  if (!towerMission || isPaused || busy || dialogOpen()) return;
   clearInput();
-  const result = craneMission.toggleGrab();
+  if (towerMission.resetCargo()) toast("材料已放回原料垛，可以重新抓取。");
+});
+let towerUIState = "";
+function updateTowerUI() {
+  if (!towerMission) return;
+  const m = towerMission;
+  const state = JSON.stringify([
+    m.count,
+    m.received,
+    m.remaining,
+    m.status,
+    !!m.held,
+    isPaused,
+  ]);
+  if (state === towerUIState) return;
+  towerUIState = state;
+  $("#tower-floor").textContent =
+    `楼栋 ${2 + m.count} / 7 层 · 加建 ${m.count} / 5 层`;
+  $("#tower-materials").innerHTML = materialNames
+    .map(
+      (name, i) =>
+        `<li class="${m.received[i] ? "done" : ""}"><span>${m.received[i] ? "✓" : "○"} ${name}</span><small>${m.completed ? "全部建设完成" : m.received[i] ? "本层已就位" : "本层待送达"} · 剩余 ${m.remaining[i]}</small></li>`,
+    )
+    .join("");
+  $("#tower-status").textContent = m.status;
+  compactMission.textContent = `加建 ${m.count} / 5 层 · ${materialNames.map((name, i) => name + (m.received[i] ? "✓" : "○")).join(" ")}`;
+  $<HTMLButtonElement>("#return-cargo").disabled = !m.held || isPaused || busy;
+}
+function toggleCraneCargo() {
+  if (
+    !ready ||
+    busy ||
+    isPaused ||
+    mode !== "site" ||
+    (!craneMission && !towerMission)
+  )
+    return;
+  clearInput();
+  const result = (towerMission || craneMission)!.toggleGrab();
   if (result === "grabbed") {
     tone(430, 0.12, 0.018);
-    toast("物资已挂好。先提升吊钩，再回转到岸边。");
+    toast(
+      towerMission
+        ? "材料已挂好。先提升吊钩，再运到楼顶同名区域。"
+        : "物资已挂好。先提升吊钩，再回转到岸边。",
+    );
   } else if (result === "released") {
     tone(560, 0.16, 0.018);
     toast("物资已安全放入指定位置。");
-  } else if (result === "invalid-release") toast("请把物资低速放到发亮的绿色框内。");
+  } else if (result === "invalid-release")
+    toast(
+      towerMission
+        ? "请对准楼顶同名区域，并下降到材料底部接触平台后释放。"
+        : "请把物资低速放到发亮的绿色框内。",
+    );
+  updateTowerUI();
 }
 $("#scoop-assist").addEventListener("click", () => {
   if (!ready || busy || isPaused || mode !== "site") return;
-  if (variant === 2) {
+  if (variant >= 2) {
     toggleCraneCargo();
     return;
   }
@@ -530,6 +804,28 @@ $("#scoop-assist").addEventListener("click", () => {
 });
 let assistUIState = "";
 function updateAssistUI() {
+  if (towerMission && mode === "site") {
+    const m = towerMission,
+      carrying = !!m.held;
+    const button = $<HTMLButtonElement>("#scoop-assist");
+    button.disabled =
+      isPaused || busy || (carrying ? !m.canRelease : !m.canGrab);
+    button.setAttribute("aria-pressed", String(carrying));
+    button.ariaLabel = carrying ? "释放材料 Space" : "抓取材料 Space";
+    button.querySelector("strong")!.textContent = carrying
+      ? "释放材料"
+      : "抓取材料";
+    $("#grab-key").hidden = false;
+    $("#assist-state").textContent = carrying
+      ? "已挂载"
+      : m.canGrab
+        ? "可抓取"
+        : "未对准";
+    $("#assist-hint").textContent = m.status;
+    updateTowerUI();
+    assistUIState = "";
+    return;
+  }
   const state = `${mode}:${variant}:${machine.scoopAssist}:${machine.scoopAssistReady}:${isPaused}:${craneMission?.held?.root.name}:${craneMission?.candidate?.root.name}:${craneMission?.cargoGrounded}`;
   if (state === assistUIState) return;
   assistUIState = state;
@@ -540,10 +836,18 @@ function updateAssistUI() {
     button.setAttribute("aria-pressed", String(carrying));
     button.ariaLabel = carrying ? "释放物资 Space" : "抓取物资 Space";
     $("#grab-key").hidden = false;
-    button.querySelector("strong")!.textContent = carrying ? "释放物资" : "抓取物资";
-    $("#assist-state").textContent = carrying ? "已挂载" : craneMission?.candidate ? "可抓取" : "未对准";
+    button.querySelector("strong")!.textContent = carrying
+      ? "释放物资"
+      : "抓取物资";
+    $("#assist-state").textContent = carrying
+      ? "已挂载"
+      : craneMission?.candidate
+        ? "可抓取"
+        : "未对准";
     $("#assist-hint").textContent = carrying
-      ? craneMission?.cargoGrounded ? "物资已触地，不能继续下放；可上升或释放。" : "移动到绿色卸货框，贴近地面后释放。"
+      ? craneMission?.cargoGrounded
+        ? "物资已触地，不能继续下放；可上升或释放。"
+        : "移动到绿色卸货框，贴近地面后释放。"
       : "吊钩接触箱子时，箱子会发光。";
     return;
   }
@@ -569,7 +873,7 @@ $("#reset-machine").addEventListener("click", () => {
   if (!ready || busy) return;
   if (mode === "site") {
     void enterSite(variant);
-    toast("机械与石堆已重新准备好。");
+    toast("机械与任务已重新准备好。");
   } else {
     activeDisplayMachine().reset();
     focus();
@@ -614,7 +918,23 @@ const bindings: Record<string, [string, number]> = {
   KeyH: ["joint3", 1],
 };
 window.addEventListener("keydown", (e) => {
-  if (e.code === "Space" && !e.repeat && craneMission && mode === "site" && !dialogOpen() && !isPaused) {
+  if (
+    (e.target as HTMLElement | null)?.closest?.(
+      "input, textarea, select, [contenteditable='true']",
+    )
+  )
+    return;
+  if (
+    e.code === "Space" &&
+    !e.repeat &&
+    (craneMission || towerMission) &&
+    mode === "site" &&
+    !dialogOpen() &&
+    !isPaused &&
+    !e.ctrlKey &&
+    !e.metaKey &&
+    !e.altKey
+  ) {
     e.preventDefault();
     toggleCraneCargo();
     return;
@@ -717,9 +1037,17 @@ function fireworks() {
       vel = new Float32Array(count * 3),
       colors = new Float32Array(count * 3);
     const center = new THREE.Vector3(
-      (sim?.tracker.target.x ?? craneMission?.target.x ?? 0) + (Math.random() - 0.5) * 7,
-      5 + Math.random() * 4,
-      (sim?.tracker.target.z ?? craneMission?.target.z ?? 0) + (Math.random() - 0.5) * 6,
+      (sim?.tracker.target.x ??
+        craneMission?.target.x ??
+        towerMission?.target.x ??
+        0) +
+        (Math.random() - 0.5) * 7,
+      (towerMission ? towerMission.roofY + 3 : 5) + Math.random() * 4,
+      (sim?.tracker.target.z ??
+        craneMission?.target.z ??
+        towerMission?.target.z ??
+        0) +
+        (Math.random() - 0.5) * 6,
     );
     for (let i = 0; i < count; i++) {
       positions.set(center.toArray(), i * 3);
@@ -787,13 +1115,18 @@ function applyMissionResult(
 ) {
   if (result.count !== lastCount) {
     lastCount = result.count;
-    $("#delivered").textContent = String(result.count) + (variant === 1 ? "%" : "");
-    $("#progress-fill").style.width = Math.min(100, (result.count / required) * 100) + "%";
-    compactMission.textContent = variant === 2
-      ? `已吊运 ${result.count} / 5 箱 · 河岸作业`
-      : variant === 1
-        ? `车厢 ${result.count}% / 80% · 挖沙装车`
-        : `已送达 ${result.count} / ${required} 块石头 · 查看任务提示`;
+    $("#delivered").textContent =
+      String(result.count) + (variant === 1 ? "%" : "");
+    $("#progress-fill").style.width =
+      Math.min(100, (result.count / required) * 100) + "%";
+    compactMission.textContent =
+      variant === 3 && towerMission
+        ? `加建 ${result.count} / 5 层 · ${materialNames.map((name, i) => name + (towerMission!.received[i] ? "✓" : "○")).join(" ")}`
+        : variant === 2
+          ? `已吊运 ${result.count} / 5 箱 · 河岸作业`
+          : variant === 1
+            ? `车厢 ${result.count}% / 80% · 挖沙装车`
+            : `已送达 ${result.count} / ${required} 块石头 · 查看任务提示`;
     if (result.count > 0) tone(520, 0.12, 0.012);
   }
   if (result.justCompleted) {
@@ -801,7 +1134,8 @@ function applyMissionResult(
     tone(523, 0.25);
     setTimeout(() => tone(659, 0.25), 160);
     setTimeout(() => tone(784, 0.5), 320);
-    $("#success-count").textContent = String(result.count) + (variant === 1 ? "%" : "");
+    $("#success-count").textContent =
+      String(result.count) + (variant === 1 ? "%" : "");
     successTimer = window.setTimeout(() => {
       clearInput();
       showDialog("#success-dialog");
@@ -827,9 +1161,25 @@ function frame(now: number) {
   if (ready && !busy && !isPaused && !dialogOpen() && !document.hidden) {
     accumulator += dt;
     while (accumulator >= fixedStep) {
-      if (craneMission) {
-        applyMissionResult(craneMission.step(inputs, fixedStep), craneMission.required);
-      } else if (mode === "showroom" && selectedMachine === "crane")
+      if (towerMission) {
+        const result = towerMission.step(inputs, fixedStep);
+        applyMissionResult(result, towerMission.required);
+        if (result.justBuilt) {
+          toast(
+            result.justCompleted
+              ? "7 层楼栋建成！"
+              : `第 ${towerMission.count} 层建设完成，继续吊运下一组材料。`,
+          );
+          if (towerView === "roof") focusTowerView("roof");
+        }
+      } else if (craneMission) {
+        applyMissionResult(
+          craneMission.step(inputs, fixedStep),
+          craneMission.required,
+        );
+      } else if (mode === "showroom" && selectedMachine === "tower")
+        towerMachine.step(inputs, fixedStep);
+      else if (mode === "showroom" && selectedMachine === "crane")
         craneMachine.step(inputs, fixedStep);
       else machine.step(inputs, fixedStep, mode === "site");
       if (
@@ -854,18 +1204,43 @@ function frame(now: number) {
     sim?.render(accumulator / fixedStep);
   } else accumulator = 0;
   if (ready) {
-    const activeCrane = craneMission || (mode === "showroom" && selectedMachine === "crane" ? craneMachine : null);
-    if (activeCrane) {
-      const values = activeCrane instanceof CraneMachine
-        ? { slew: activeCrane.angles[0], boom: activeCrane.angles[1], extension: activeCrane.angles[2], ropeLength: activeCrane.angles[3] }
-        : activeCrane;
-      $("#angle0").textContent = Math.round(THREE.MathUtils.radToDeg(values.slew)) + "°";
-      $("#angle1").textContent = Math.round(THREE.MathUtils.radToDeg(values.boom)) + "°";
+    const activeTower =
+      towerMission?.machine ||
+      (mode === "showroom" && selectedMachine === "tower"
+        ? towerMachine
+        : null);
+    const activeCrane =
+      craneMission ||
+      (mode === "showroom" && selectedMachine === "crane"
+        ? craneMachine
+        : null);
+    if (activeTower) {
+      $("#angle0").textContent =
+        Math.round(THREE.MathUtils.radToDeg(activeTower.slew)) + "°";
+      $("#angle2").textContent = activeTower.radius.toFixed(1) + " m";
+      $("#angle3").textContent = activeTower.ropeLength.toFixed(1) + " m";
+    } else if (activeCrane) {
+      const values =
+        activeCrane instanceof CraneMachine
+          ? {
+              slew: activeCrane.angles[0],
+              boom: activeCrane.angles[1],
+              extension: activeCrane.angles[2],
+              ropeLength: activeCrane.angles[3],
+            }
+          : activeCrane;
+      $("#angle0").textContent =
+        Math.round(THREE.MathUtils.radToDeg(values.slew)) + "°";
+      $("#angle1").textContent =
+        Math.round(THREE.MathUtils.radToDeg(values.boom)) + "°";
       $("#angle2").textContent = values.extension.toFixed(1) + " m";
       $("#angle3").textContent = values.ropeLength.toFixed(1) + " m";
-    } else jointNames.forEach(
-      (_, i) => ($("#angle" + i).textContent = Math.round(THREE.MathUtils.radToDeg(machine.angles[i])) + "°"),
-    );
+    } else
+      jointNames.forEach(
+        (_, i) =>
+          ($("#angle" + i).textContent =
+            Math.round(THREE.MathUtils.radToDeg(machine.angles[i])) + "°"),
+      );
     updateLabels();
     updateAssistUI();
   }
@@ -875,7 +1250,11 @@ function frame(now: number) {
 }
 async function boot() {
   try {
-    await Promise.all([machine.load(), craneMachine.load()]);
+    await Promise.all([
+      machine.load(),
+      craneMachine.load(),
+      towerMachine.load(),
+    ]);
     ready = true;
     machine.reset();
     createLabels();
@@ -916,6 +1295,15 @@ if (import.meta.env.DEV)
     },
     get craneMachine() {
       return craneMachine;
+    },
+    get towerMachine() {
+      return towerMachine;
+    },
+    get towerMission() {
+      return towerMission;
+    },
+    get rendererInfo() {
+      return renderer.info.render;
     },
     get selectedMachine() {
       return selectedMachine;

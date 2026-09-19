@@ -1,0 +1,138 @@
+{
+  "tower-crane": {
+    "bytes": 1068248,
+    "meshes": 590,
+    "triangles": 16020,
+    "size": [
+      32.12700000626736,
+      34.64642339510623,
+      7.824999898672104
+    ],
+    "isolatedScene": true
+  },
+  "rebar-bundle": {
+    "bytes": 624020,
+    "meshes": 890,
+    "triangles": 35160,
+    "size": [
+      3.5799999237060547,
+      6.235000263638043,
+      1.1579999818979276
+    ],
+    "isolatedScene": true,
+    "stackCount": 5
+  },
+  "brick-pallet": {
+    "bytes": 1939372,
+    "meshes": 390,
+    "triangles": 38760,
+    "size": [
+      2.3299999237060547,
+      7.435000095475473,
+      1.5
+    ],
+    "isolatedScene": true,
+    "stackCount": 5
+  },
+  "gypsum-stack": {
+    "bytes": 413212,
+    "meshes": 160,
+    "triangles": 10560,
+    "size": [
+      2.3299999237060547,
+      5.734999809373178,
+      1.5079999743029475
+    ],
+    "isolatedScene": true,
+    "stackCount": 5
+  },
+  "construction-building": {
+    "bytes": 471996,
+    "meshes": 95,
+    "triangles": 9416,
+    "size": [
+      12.600000381469727,
+      7.375000470597543,
+      10.600000381469727
+    ],
+    "isolatedScene": true
+  },
+  "floor-module": {
+    "bytes": 112024,
+    "meshes": 19,
+    "triangles": 2052,
+    "size": [
+      12,
+      2.9999998807907104,
+      10
+    ],
+    "isolatedScene": true
+  },
+  "residential-building": {
+    "bytes": 266356,
+    "meshes": 204,
+    "triangles": 2928,
+    "size": [
+      12.800000190734863,
+      20.250000774860382,
+      12.200000286102295
+    ],
+    "isolatedScene": true
+  },
+  "site-environment": {
+    "bytes": 1026176,
+    "meshes": 344,
+    "triangles": 17080,
+    "size": [
+      96,
+      5.450000107288361,
+      80.09855306148529
+    ],
+    "isolatedScene": true
+  },
+  "rebar-bundle-unit": {
+    "bytes": 409280,
+    "meshes": 178,
+    "triangles": 7032,
+    "size": [
+      3.5799999237060547,
+      1.2470001091428042,
+      1.1579999818979276
+    ],
+    "isolatedScene": true
+  },
+  "brick-pallet-unit": {
+    "bytes": 423008,
+    "meshes": 78,
+    "triangles": 7752,
+    "size": [
+      2.3299999237060547,
+      1.487000141251841,
+      1.5
+    ],
+    "isolatedScene": true
+  },
+  "gypsum-stack-unit": {
+    "bytes": 124684,
+    "meshes": 32,
+    "triangles": 2112,
+    "size": [
+      2.3299999237060547,
+      1.14700010787324,
+      1.5079999743029475
+    ],
+    "isolatedScene": true
+  },
+  "motion": {
+    "slewMovesHook": true,
+    "trolleyMovesHook": true,
+    "hookHoists": true,
+    "attachmentsRemainFixed": true
+  },
+  "layout": {
+    "allTargetsWithinRadius": true,
+    "finalRoofClearance": true,
+    "repeatHeight": 3,
+    "initialRoofHeight": 6
+  }
+}

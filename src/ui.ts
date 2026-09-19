@@ -32,6 +32,50 @@ export const icon = (name: string, size = 20) => {
   );
 };
 export const description: Record<string, { title: string; text: string }> = {
+  塔吊基座: {
+    title: "基座 · 稳固的根基",
+    text: "混凝土基础固定塔身，塔吊在这里稳定作业。",
+  },
+  塔身: {
+    title: "塔身 · 高高的钢铁骨架",
+    text: "一节节格构标准节托起吊臂，内部梯子方便攀登。",
+  },
+  附着杆: {
+    title: "附着杆 · 连接楼栋",
+    text: "连接塔身与已建好的楼体，随塔身保持固定。",
+  },
+  塔吊回转机构: {
+    title: "回转机构 · 转向料场和楼顶",
+    text: "带动吊臂、平衡臂和驾驶室一起水平转动，按 Q / E 试一试。",
+  },
+  塔吊驾驶室: {
+    title: "驾驶室 · 高空指挥所",
+    text: "工程师在这里观察料场和楼顶，控制吊运。",
+  },
+  水平吊臂: {
+    title: "吊臂 · 小车的高空轨道",
+    text: "水平桁架吊臂支撑小车，让吊物靠近或远离塔身。",
+  },
+  平衡臂: {
+    title: "平衡臂 · 吊臂的另一侧",
+    text: "承载卷扬机与配重，跟随回转平台一起转动。",
+  },
+  塔吊配重: {
+    title: "配重 · 平衡的帮手",
+    text: "平衡臂上的重块帮助平衡前方吊臂。",
+  },
+  塔帽与拉杆: {
+    title: "塔帽与拉杆 · 拉住两侧臂架",
+    text: "拉杆从塔帽连接吊臂和平衡臂，随上部结构整体回转。",
+  },
+  变幅小车: {
+    title: "变幅小车 · 改变吊运半径",
+    text: "按 T / G 沿吊臂向外或向内移动，吊钩也跟着移动。",
+  },
+  起重吊钩: {
+    title: "吊钩 · 挂住材料",
+    text: "按 Y / H 升降，对准最上层材料的黄色吊环后按 Space 抓取。",
+  },
   动臂: {
     title: "动臂 · 有力的大胳膊",
     text: "抬起或放下整套工作装置。先把动臂放低，让铲斗接近石头。",
@@ -98,26 +142,26 @@ export function markup() {
 <div class="top-actions"><button id="sound" class="icon-button" aria-label="开启声音" title="开启声音">${icon("volume")}</button><button id="help" class="icon-button" aria-label="查看操作指南" title="操作指南">${icon("book")}</button></div></header>
 <main class="layout">
 <aside class="sidebar">
-<h1 id="side-title">机械选择</h1>
+<h1 id="side-title" hidden></h1>
 <div id="garage-panel">
 <button class="machine-card selected" id="choose-excavator"><span class="card-top"><span class="tag">挖掘 · 搬运</span><span class="selected-dot">${icon("check", 13)}</span></span><div class="machine-thumbnail"></div><strong>履带式挖掘机</strong><span class="card-bottom">EX 200 <span>已选择 ${icon("check", 13)}</span></span></button>
 <button class="machine-card crane-machine-card" id="choose-crane"><span class="card-top"><span class="tag">起升 · 回转</span><span class="selected-dot">${icon("check", 13)}</span></span><div class="machine-thumbnail crane-thumbnail"></div><strong>汽车起重机</strong><span class="card-bottom">TC 80 <span>点击选择</span></span></button>
-<div class="upcoming"><span class="mini-machine">🏗</span><div><strong>塔吊</strong><small>高耸的钢铁脊梁</small></div><span class="soon">筹备中</span></div>
+<button class="machine-card tower-machine-card" id="choose-tower"><span class="card-top"><span class="tag">吊运 · 建楼</span><span class="selected-dot">${icon("check", 13)}</span></span><div class="machine-thumbnail tower-thumbnail"></div><strong>塔吊</strong><span class="card-bottom">TC 24 <span>点击选择</span></span></button>
 </div>
 <div id="mission-panel" hidden>
 <button class="back-button" id="return-showroom">${icon("arrow", 16)} 返回机械展厅</button>
-<h2 id="mission-name">城市工地</h2>
+<h2 id="mission-name">城市工地</h2><section id="tower-task" hidden><strong id="tower-floor"></strong><ul id="tower-materials"></ul></section>
 <div class="progress-caption"><span>搬运进度</span><strong><b id="delivered">0</b> / <span id="required">8</span></strong></div><div class="progress-track"><span id="progress-fill"></span></div>
 <ol class="mission-steps"><li><span>1</span><b>装载石头</b></li><li><span>2</span><b>移动到绿圈</b></li><li><span>3</span><b>卸下并停稳</b></li></ol>
 <button class="text-button" id="change-scene">${icon("cube", 17)} 切换施工场景 ${icon("chevron", 15)}</button>
 </div>
 </aside>
 <section class="stage" aria-label="三维机械互动区域">
-<div class="stage-heading"><button id="reset-machine" class="tool-button">${icon("rotate", 15)} 机械复位</button></div>
+<div class="stage-heading"><label id="mobile-machine-picker">选择机械 <select id="machine-select"><option value="excavator">履带式挖掘机</option><option value="crane">汽车起重机</option><option value="tower">塔吊</option></select></label><button id="reset-machine" class="tool-button">${icon("rotate", 15)} 机械复位</button></div>
 <div id="viewport"><div id="labels"></div><div id="target-label" hidden>卸在这里 <span>↓</span></div></div>
 <div class="loading" id="loading"><span class="loader"></span><strong id="loading-message">挖掘机正在驶来…</strong><small>正在准备模型与机械部件</small></div>
 <button id="overview" class="tool-button stage-overview" hidden>${icon("cube", 16)} 鸟瞰工地</button>
-<div class="camera-hint">${icon("mouse", 15)} <span>拖动旋转</span><i>·</i><span>滚轮缩放</span><i>·</i><span>右键平移</span></div>
+<div id="tower-views" hidden><div class="tower-view-buttons"><button data-tower-view="overview">全景</button><button data-tower-view="stock">料场</button><button data-tower-view="roof">楼顶</button><button id="return-cargo" disabled>放回原位</button></div><p id="tower-status" role="status" aria-live="polite"></p></div><div class="camera-hint">${icon("mouse", 15)} <span>拖动旋转</span><i>·</i><span>滚轮缩放</span><i>·</i><span>右键平移</span></div>
 <div class="status-toast" id="toast" role="status" aria-live="polite"></div>
 </section>
 <aside class="controls-panel">
@@ -131,7 +175,7 @@ export function markup() {
 <div class="start-card"><button id="start" class="primary-button" disabled>去工地试一试 ${icon("arrow", 18)}</button></div>
 </aside>
 </main>
-<dialog id="scene-dialog"><button class="dialog-close icon-button" data-close aria-label="关闭">${icon("close")}</button><div class="eyebrow">YOUR NEXT ADVENTURE</div><h2>选一份工程，出发吧。</h2><p class="muted">选择机械，完成不同的工程挑战。</p><div class="scene-cards"><button class="scene-card" data-scene="0"><div class="scene-art city-art" role="img" aria-label="挖掘机在城市建筑工地搬运石料"></div><span class="tag">第一站 · 轻松上手</span><h3>城市建筑工地</h3><p>在高楼之间，把 8 块石头送到指定区域。</p><strong>开始施工 ${icon("arrow", 16)}</strong></button><button class="scene-card" data-scene="1"><div class="scene-art yard-art" role="img" aria-label="挖掘机在材料场向工程车装载砂石"></div><span class="tag">第二站 · 沙土作业</span><h3>砂料厂 · 装车</h3><p>挖掘沙层并越过围墙，把卡车装载至 80%。</p><strong>接受挑战 ${icon("arrow", 16)}</strong></button><button class="scene-card crane-scene-card" data-scene="2"><div class="scene-art crane-art" role="img" aria-label="汽车起重机在河岸吊运货船上的物资"></div><span class="tag">第三站 · 精准吊装</span><h3>河岸运输任务</h3><p>操纵汽车起重机，把船上的 5 箱物资吊到岸边。</p><strong>开始吊装 ${icon("arrow", 16)}</strong></button></div></dialog>
+<dialog id="scene-dialog"><button class="dialog-close icon-button" data-close aria-label="关闭">${icon("close")}</button><div class="eyebrow">YOUR NEXT ADVENTURE</div><h2>选一份工程，出发吧。</h2><p class="muted">选择机械，完成不同的工程挑战。</p><div class="scene-cards"><button class="scene-card" data-scene="0"><div class="scene-art city-art" role="img" aria-label="挖掘机在城市建筑工地搬运石料"></div><span class="tag">第一站 · 轻松上手</span><h3>城市建筑工地</h3><p>在高楼之间，把 8 块石头送到指定区域。</p><strong>开始施工 ${icon("arrow", 16)}</strong></button><button class="scene-card" data-scene="1"><div class="scene-art yard-art" role="img" aria-label="挖掘机在材料场向工程车装载砂石"></div><span class="tag">第二站 · 沙土作业</span><h3>砂料厂 · 装车</h3><p>挖掘沙层并越过围墙，把卡车装载至 80%。</p><strong>接受挑战 ${icon("arrow", 16)}</strong></button><button class="scene-card crane-scene-card" data-scene="2"><div class="scene-art crane-art" role="img" aria-label="汽车起重机在河岸吊运货船上的物资"></div><span class="tag">第三站 · 精准吊装</span><h3>河岸运输任务</h3><p>操纵汽车起重机，把船上的 5 箱物资吊到岸边。</p><strong>开始吊装 ${icon("arrow", 16)}</strong></button><button class="scene-card" data-scene="3"><div class="scene-art tower-art" role="img" aria-label="塔吊在小区内将三类材料吊运到施工楼顶"></div><span class="tag">第四站 · 一层层建高楼</span><h3>小区楼栋建设</h3><p>吊运钢筋、砖头和石膏板，每种一份建成一层，共增加 5 层。</p><strong>开始建楼 ${icon("arrow", 16)}</strong></button></div></dialog>
 <dialog id="help-dialog"><button class="dialog-close icon-button" data-close aria-label="关闭">${icon("close")}</button><div class="eyebrow">LITTLE BUILDER'S HANDBOOK</div><h2>慢慢来，你就是工程师。</h2><p>鼠标拖动画面可以环绕，滚轮缩放，右键拖动平移。按住右侧按钮，机械就会持续动作，松开即停。</p><div class="help-grid"><p><b>W / S</b>前进 / 后退</p><p><b>A / D</b>底盘左转 / 右转</p><p><b>Q / E</b>上车左回转 / 右回转</p><p><b>R / F</b>动臂抬起 / 放下</p><p><b>T / G</b>斗杆伸出 / 收回</p><p><b>Y / H</b>铲斗收斗 / 翻斗</p></div><p class="help-tip">把铲斗放低，朝石头前进，再慢慢收斗、抬臂。运到绿色圆圈上方，翻斗卸下。无需赶时间，也不怕重来。</p><button class="primary-button" data-close>我知道啦 ${icon("check", 17)}</button></dialog>
 <dialog id="success-dialog"><div class="success-mark">${icon("helmet", 42)}</div><div class="eyebrow">MISSION ACCOMPLISHED</div><h2>干得漂亮，小工程师！</h2><p>石头都到达了新家。<br/>你用自己的双手，完成了一份了不起的工程。</p><div class="success-stats"><div><b id="success-count">8</b><span>块石头成功送达</span></div><div><b>★ ★ ★</b><span>今天的机械小能手</span></div></div><button class="primary-button" id="keep-playing">继续自由探索 ${icon("arrow", 18)}</button><button class="text-button" id="another-scene">再选一个任务</button></dialog>
 `;

@@ -249,6 +249,110 @@ a {
 .crane-machine-card {
   margin-top: 12px;
 }
+.tower-machine-card {
+  margin-top: 12px;
+}
+.tower-thumbnail {
+  background-image: url("../assets/tower-construction/tower-crane/tower-crane-preview.png");
+  background-position: center 50%;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-color: #aaa9a3;
+}
+.tower-art {
+  background: url("../assets/scenes/tower-construction-preview.png") center / cover;
+}
+#mobile-machine-picker {
+  display: none;
+}
+#tower-task {
+  margin: 12px 0 20px;
+  font-size: 12px;
+}
+#tower-materials {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+#tower-materials li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+#tower-materials span,
+#tower-materials small {
+  display: block;
+}
+#tower-materials small {
+  margin-top: 4px;
+  color: #667362;
+  font-size: 10px;
+}
+#tower-materials .done {
+  color: #36744b;
+}
+#tower-views {
+  position: absolute;
+  z-index: 5;
+  left: 18px;
+  right: 18px;
+  bottom: 50px;
+  pointer-events: none;
+}
+.tower-view-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tower-view-buttons button {
+  pointer-events: auto;
+  padding: 8px 12px;
+  border: 1px solid #cbd4c8;
+  border-radius: 8px;
+  background: #f7f8f2ed;
+  color: #344a39;
+  font-size: 12px;
+}
+#tower-status {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #f7f8f2ed;
+  color: #344a39;
+  font-size: 12px;
+  max-width: 440px;
+}
+body[data-machine="tower"] .drive-section {
+  display: none;
+}
+@media (max-width: 850px) {
+  #mobile-machine-picker {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    pointer-events: auto;
+  }
+  #machine-select {
+    max-width: 135px;
+    padding: 7px 3px;
+    border: 1px solid #ccd2c4;
+    background: #fafbf2;
+    border-radius: 6px;
+  }
+  #tower-views {
+    left: 10px;
+    right: 10px;
+    bottom: 40px;
+  }
+  #tower-status {
+    font-size: 10px;
+    padding: 5px 7px;
+  }
+  .tower-view-buttons button {
+    font-size: 10px;
+    padding: 6px 8px;
+  }
+}
 .crane-thumbnail {
   background-image: url("../assets/truck-crane/truck-crane-preview.png");
   background-position: center 52%;
@@ -1371,5 +1475,23 @@ body[data-mode="site"] .start-card {
   * {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 850px) {
+  body[data-machine="tower"] #tower-task {
+    display: none;
+  }
+  body[data-machine="tower"] .compact-mission {
+    bottom: auto;
+    top: 62px;
+    left: 12px;
+    right: 12px;
+    padding: 7px;
+    pointer-events: auto;
+  }
+  body[data-mode="showroom"] .stage-heading {
+    flex-wrap: wrap;
+    gap: 6px;
   }
 }

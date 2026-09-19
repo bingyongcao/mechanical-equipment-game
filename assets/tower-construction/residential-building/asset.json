@@ -1,0 +1,8 @@
+{
+  "asset": "residential-building",
+  "objects": 207,
+  "meshes": 204,
+  "root": "ResidentialBuilding",
+  "blend": "D:\\repos\\mechanical-equipment-game\\assets\\tower-construction\\residential-building\\residential-building.blend",
+  "glb": "D:\\repos\\mechanical-equipment-game\\assets\\tower-construction\\residential-building\\residential-building.glb"
+}

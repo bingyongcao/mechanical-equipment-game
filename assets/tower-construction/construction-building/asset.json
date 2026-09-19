@@ -1,0 +1,8 @@
+{
+  "asset": "construction-building",
+  "objects": 107,
+  "meshes": 92,
+  "root": "ConstructionBuilding",
+  "blend": "D:\\repos\\mechanical-equipment-game\\assets\\tower-construction\\construction-building\\construction-building.blend",
+  "glb": "D:\\repos\\mechanical-equipment-game\\assets\\tower-construction\\construction-building\\construction-building.glb"
+}

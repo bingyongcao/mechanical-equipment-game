@@ -1,0 +1,8 @@
+{
+  "asset": "gypsum-stack",
+  "objects": 173,
+  "meshes": 160,
+  "root": "GypsumStackStack",
+  "blend": "D:\\repos\\mechanical-equipment-game\\assets\\tower-construction\\gypsum-stack\\gypsum-stack.blend",
+  "glb": "D:\\repos\\mechanical-equipment-game\\assets\\tower-construction\\gypsum-stack\\gypsum-stack.glb"
+}

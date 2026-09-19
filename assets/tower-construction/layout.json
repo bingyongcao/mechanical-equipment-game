@@ -1,0 +1,19 @@
+{
+  "coordinateSystem": "Blender Z up, metres; convert to Three.js with (x,z,-y)",
+  "environment": { "asset": "site-environment", "position": [0,0,0] },
+  "crane": { "asset": "tower-crane", "position": [0,0,0.05] },
+  "constructionBuilding": { "asset": "construction-building", "position": [12,3,0.05], "initialFloors": 2, "floorHeight": 3, "maxFloors": 7 },
+  "repeatFloor": { "asset": "floor-module", "firstNewFloorLocalZ": 6, "stepZ": 3, "count": 5 },
+  "residentialBuildings": [
+    { "asset": "residential-building", "position": [-22,15,0.05] },
+    { "asset": "residential-building", "position": [-6,17,0.05] },
+    { "asset": "residential-building", "position": [16,18,0.05] },
+    { "asset": "residential-building", "position": [-23,-8,0.05] }
+  ],
+  "materialStacks": [
+    { "asset": "rebar-bundle", "unitGlb": "rebar-bundle-unit.glb", "position": [5,-10,0.05], "count": 5, "stackPitch": 1.247, "grabNodePrefix": "A_GrabPoint_RebarBundle" },
+    { "asset": "brick-pallet", "unitGlb": "brick-pallet-unit.glb", "position": [10,-10,0.05], "count": 5, "stackPitch": 1.487, "grabNodePrefix": "A_GrabPoint_BrickPallet" },
+    { "asset": "gypsum-stack", "unitGlb": "gypsum-stack-unit.glb", "position": [15,-10,0.05], "count": 5, "stackPitch": 1.147, "grabNodePrefix": "A_GrabPoint_GypsumStack" }
+  ],
+  "roof": { "movingNode": "RoofWorkPlatform", "initialLocalZ": 6, "pads": ["UnloadPad_REBAR", "UnloadPad_BRICK", "UnloadPad_BOARD"] }
+}

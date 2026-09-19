@@ -8,7 +8,11 @@ const browser = await chromium.launch({
   headless: true,
   args: ["--enable-unsafe-swiftshader"],
 });
-const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+// Fixed-step fixtures need the resting model, independent of entry tween timing.
+const page = await browser.newPage({
+  viewport: { width: 1440, height: 960 },
+  reducedMotion: "reduce",
+});
 page.on("pageerror", (e) => console.log("ERROR", e.message));
 await page.goto("http://127.0.0.1:5173");
 await page.waitForFunction(() => window.__builders?.ready);

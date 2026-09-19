@@ -1,0 +1,8 @@
+{
+  "asset": "tower-crane",
+  "objects": 619,
+  "meshes": 589,
+  "root": "TowerCrane",
+  "blend": "D:\\repos\\mechanical-equipment-game\\assets\\tower-construction\\tower-crane\\tower-crane.blend",
+  "glb": "D:\\repos\\mechanical-equipment-game\\assets\\tower-construction\\tower-crane\\tower-crane.glb"
+}

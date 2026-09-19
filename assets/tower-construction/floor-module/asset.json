@@ -1,0 +1,8 @@
+{
+  "asset": "floor-module",
+  "objects": 23,
+  "meshes": 19,
+  "root": "RepeatableFloor",
+  "blend": "D:\\repos\\mechanical-equipment-game\\assets\\tower-construction\\floor-module\\floor-module.blend",
+  "glb": "D:\\repos\\mechanical-equipment-game\\assets\\tower-construction\\floor-module\\floor-module.glb"
+}

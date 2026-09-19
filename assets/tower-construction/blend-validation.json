@@ -1,0 +1,58 @@
+{
+  "brick-pallet": {
+    "scenes": [
+      "TC_brick-pallet"
+    ],
+    "objects": 403,
+    "isolated": true
+  },
+  "construction-building": {
+    "scenes": [
+      "TC_construction-building"
+    ],
+    "objects": 107,
+    "isolated": true
+  },
+  "floor-module": {
+    "scenes": [
+      "TC_floor-module"
+    ],
+    "objects": 23,
+    "isolated": true
+  },
+  "gypsum-stack": {
+    "scenes": [
+      "TC_gypsum-stack"
+    ],
+    "objects": 173,
+    "isolated": true
+  },
+  "rebar-bundle": {
+    "scenes": [
+      "TC_rebar-bundle"
+    ],
+    "objects": 903,
+    "isolated": true
+  },
+  "residential-building": {
+    "scenes": [
+      "TC_residential-building"
+    ],
+    "objects": 207,
+    "isolated": true
+  },
+  "site-environment": {
+    "scenes": [
+      "TC_site-environment"
+    ],
+    "objects": 394,
+    "isolated": true
+  },
+  "tower-crane": {
+    "scenes": [
+      "TC_tower-crane"
+    ],
+    "objects": 619,
+    "isolated": true
+  }
+}

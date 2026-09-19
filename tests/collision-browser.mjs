@@ -6,7 +6,8 @@ const browser = await chromium.launch({
   headless: true,
   args: ["--enable-unsafe-swiftshader"],
 });
-const page = await browser.newPage();
+// Collision geometry must not be sampled midway through the entry scale tween.
+const page = await browser.newPage({ reducedMotion: "reduce" });
 try {
   await page.goto("http://127.0.0.1:5173");
   await page.waitForFunction(() => window.__builders?.ready);

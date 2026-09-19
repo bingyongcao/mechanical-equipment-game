@@ -8,7 +8,12 @@ const browser = await chromium.launch({
   headless: true,
   args: ["--enable-unsafe-swiftshader"],
 });
-const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+// Fixed-step physics fixtures must run at the resting model scale, not midway
+// through the independent presentation tween that enterSite starts.
+const page = await browser.newPage({
+  viewport: { width: 1440, height: 960 },
+  reducedMotion: "reduce",
+});
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 try {

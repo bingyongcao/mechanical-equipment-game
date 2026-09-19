@@ -1,0 +1,27 @@
+{
+  "units": "metres",
+  "coordinates": { "blender": "Z up, jib +X", "gltf": "Y up, jib +X", "conversion": "(x,y,z) -> (x,z,-y)" },
+  "root": "TowerCrane",
+  "blenderControls": {
+    "slew_degrees": { "default": 0, "min": -360, "max": 360 },
+    "trolley_radius": { "default": 11, "min": 2.4, "max": 23 },
+    "rope_length": { "default": 17, "min": 2, "max": 28.5 }
+  },
+  "runtimeJoints": {
+    "slew": { "node": "J_Slew", "property": "rotation.y", "unit": "radians", "continuous": true },
+    "trolley": { "node": "J_Trolley", "property": "position.x", "min": 2.4, "max": 23 },
+    "hoist": { "node": "J_Hook", "property": "position.y", "expression": "-ropeLength" },
+    "rope": { "node": "J_Rope", "property": "scale.y", "expression": "ropeLength / 17" }
+  },
+  "cargoAttach": "A_CargoAttach",
+  "attachOffsetBelowHook": 0.96,
+  "trolleyHeightAboveAssetOrigin": 30.3,
+  "fixedParts": ["Base", "TowerMast", "BuildingAttachments"],
+  "upperParts": ["SlewPlatform", "TowerHead", "Jib", "CounterJib", "Counterweights", "JibTieRods", "OperatorCab", "HoistWinch"],
+  "runtimeNotes": [
+    "Blender drivers are not exported as live glTF behavior. Update all four runtime properties together.",
+    "Attach each cargo by its A_GrabPoint_* anchor, not a hardcoded cargo height.",
+    "Clamp rope length additionally against ground, stack tops, roof, and held-cargo bounds at runtime.",
+    "Building attachments terminate at the west wall of a building placed at Blender (12,3,0.05)."
+  ]
+}
