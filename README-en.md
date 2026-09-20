@@ -4,7 +4,13 @@
 
 A children's construction-machine game prototype built on Three.js, TypeScript, and Rapier. All mechanical models in this project are produced through Blender MCP.
 
-![City construction site preview](assets/scenes/city-construction-preview.png)
+## Scene Previews
+
+| City Construction Site | Materials Yard |
+| :---: | :---: |
+| ![City construction site preview](assets/scenes/city-construction-preview.png) | ![Materials yard preview](assets/scenes/materials-yard-preview.png) |
+| Riverside Crane Operation | Tower Construction |
+| ![Riverside truck crane scene preview](assets/scenes/riverside-crane-preview.png) | ![Residential tower crane scene preview](assets/scenes/tower-construction-preview.png) |
 
 ## Getting Started
 

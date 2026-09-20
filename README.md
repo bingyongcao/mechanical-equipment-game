@@ -4,7 +4,13 @@
 
 基于 Three.js、TypeScript 和 Rapier 的儿童施工机械游戏原型。本项目机械模型均通过 Blender MCP 建立。
 
-![城市工地场景预览](assets/scenes/city-construction-preview.png)
+## 场景预览
+
+| 城市工地 | 砂料厂 |
+| :---: | :---: |
+| ![城市工地场景预览](assets/scenes/city-construction-preview.png) | ![砂料厂场景预览](assets/scenes/materials-yard-preview.png) |
+| 河岸吊装 | 塔吊建楼 |
+| ![河岸汽车起重机场景预览](assets/scenes/riverside-crane-preview.png) | ![小区塔吊施工场景预览](assets/scenes/tower-construction-preview.png) |
 
 ## 启动
 
