@@ -112,8 +112,10 @@ try {
       if (m.toggleGrab() !== "grabbed") throw Error("Grab failed");
       return c;
     };
-    const deliver = (c, type = c.type) => {
+    const deliver = (c, type = c.type, offset = { x: 0, z: 0 }) => {
       const p = m.padPosition(type);
+      p.x += offset.x;
+      p.z += offset.z;
       fly(p);
       move(
         "ropeLength",
@@ -158,7 +160,9 @@ try {
     if (!outsideBuilding) throw Error("Cargo penetrated building");
     const wrongType = o.deliver(again, 1);
     const heldAfterWrong = m.held === again;
-    const correct = o.deliver(again);
+    // Long rebar remains releasable when visibly on its pad but not perfectly
+    // centred; the previous hidden 0.25 m x 0.3 m target rejected this pose.
+    const correct = o.deliver(again, again.type, { x: 0.9, z: 0.65 });
     o.tick();
     // A completed type cannot consume another unit during the current floor.
     const remaining = m.remaining.slice();

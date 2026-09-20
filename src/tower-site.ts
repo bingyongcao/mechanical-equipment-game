@@ -412,13 +412,24 @@ export class TowerMission {
   private validPad(type: number) {
     if (!this.held || this.received[type] || this.held.type !== type)
       return false;
-    const p = this.padPosition(type),
-      b = this.cargoBox(this.held);
-    const c = b.getCenter(new THREE.Vector3());
-    // Full bundle fits within the available pad; the rebar pad includes a small edge tolerance.
+    let surface: THREE.Object3D | undefined;
+    this.pads[type].traverse((o) => {
+      if (!surface && o.name.includes("PadSurface")) surface = o;
+    });
+    if (!surface) return false;
+    const b = this.cargoBox(this.held),
+      target = new THREE.Box3().setFromObject(surface),
+      c = b.getCenter(new THREE.Vector3());
+    // The visible coloured pad is the drop target. Requiring the bundle's
+    // centre to be inside it keeps neighbouring material types distinct while
+    // allowing a practical amount of overhang for the long rebar bundle.
+    const centerOnPad =
+      c.x >= target.min.x &&
+      c.x <= target.max.x &&
+      c.z >= target.min.z &&
+      c.z <= target.max.z;
     return (
-      Math.abs(c.x - p.x) < 0.25 &&
-      Math.abs(c.z - p.z) < 0.3 &&
+      centerOnPad &&
       Math.abs(b.min.y - this.roofY) < 0.13
     );
   }

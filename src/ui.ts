@@ -144,9 +144,9 @@ export function markup() {
 <aside class="sidebar">
 <h1 id="side-title" hidden></h1>
 <div id="garage-panel">
-<button class="machine-card selected" id="choose-excavator"><span class="card-top"><span class="tag">挖掘 · 搬运</span><span class="selected-dot">${icon("check", 13)}</span></span><div class="machine-thumbnail"></div><strong>履带式挖掘机</strong><span class="card-bottom">EX 200 <span>已选择 ${icon("check", 13)}</span></span></button>
-<button class="machine-card crane-machine-card" id="choose-crane"><span class="card-top"><span class="tag">起升 · 回转</span><span class="selected-dot">${icon("check", 13)}</span></span><div class="machine-thumbnail crane-thumbnail"></div><strong>汽车起重机</strong><span class="card-bottom">TC 80 <span>点击选择</span></span></button>
-<button class="machine-card tower-machine-card" id="choose-tower"><span class="card-top"><span class="tag">吊运 · 建楼</span><span class="selected-dot">${icon("check", 13)}</span></span><div class="machine-thumbnail tower-thumbnail"></div><strong>塔吊</strong><span class="card-bottom">TC 24 <span>点击选择</span></span></button>
+<button class="machine-card selected" id="choose-excavator" aria-pressed="true"><span class="card-top"><span class="tag">挖掘 · 搬运</span><span class="selected-dot">${icon("check", 13)}</span></span><div class="machine-thumbnail"></div><span class="machine-title"><strong>履带式挖掘机</strong><span>EX 200</span></span></button>
+<button class="machine-card crane-machine-card" id="choose-crane" aria-pressed="false"><span class="card-top"><span class="tag">起升 · 回转</span><span class="selected-dot">${icon("check", 13)}</span></span><div class="machine-thumbnail crane-thumbnail"></div><span class="machine-title"><strong>汽车起重机</strong><span>TC 80</span></span></button>
+<button class="machine-card tower-machine-card" id="choose-tower" aria-pressed="false"><span class="card-top"><span class="tag">吊运 · 建楼</span><span class="selected-dot">${icon("check", 13)}</span></span><div class="machine-thumbnail tower-thumbnail"></div><span class="machine-title"><strong>塔吊</strong><span>TC 24</span></span></button>
 </div>
 <div id="mission-panel" hidden>
 <button class="back-button" id="return-showroom">${icon("arrow", 16)} 返回机械展厅</button>

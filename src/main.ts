@@ -328,15 +328,15 @@ function updateModeUI() {
   );
   $("#choose-crane").classList.toggle("selected", selectedMachine === "crane");
   $("#choose-tower").classList.toggle("selected", tower);
-  $("#choose-tower .card-bottom span").innerHTML = tower
-    ? `已选择 ${icon("check", 13)}`
-    : "点击选择";
-  $("#choose-excavator .card-bottom span").innerHTML =
-    selectedMachine === "excavator"
-      ? `已选择 ${icon("check", 13)}`
-      : "点击选择";
-  $("#choose-crane .card-bottom span").innerHTML =
-    selectedMachine === "crane" ? `已选择 ${icon("check", 13)}` : "点击选择";
+  $("#choose-excavator").setAttribute(
+    "aria-pressed",
+    String(selectedMachine === "excavator"),
+  );
+  $("#choose-crane").setAttribute(
+    "aria-pressed",
+    String(selectedMachine === "crane"),
+  );
+  $("#choose-tower").setAttribute("aria-pressed", String(tower));
   $("#start").innerHTML =
     `确认${tower ? "塔吊" : crane ? "起重机" : "挖掘机"} · 选择场景 ${icon("arrow", 18)}`;
   $("#garage-panel").hidden = mode === "site";

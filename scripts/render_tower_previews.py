@@ -91,19 +91,9 @@ def add_ground(scene, size, color):
 
 
 def render_thumbnail():
-    scene = bpy.data.scenes.new("TowerCrane_Thumbnail")
-    bpy.context.window.scene = scene
-    crane = copy_asset(scene, "tower-crane")
-    crane.rotation_euler.z = math.radians(-18)
-    add_ground(scene, 160, (0.18, 0.205, 0.22))
-    set_world(scene, (0.32, 0.40, 0.49), 0.42)
-    add_sun(scene, (math.radians(28), math.radians(-34), math.radians(-32)), 2.0, (1.0, 0.83, 0.64))
-    add_area(scene, "Key", (26, -34, 49), (4, 0, 17), 2100, (1.0, 0.86, 0.69), 18)
-    add_area(scene, "Fill", (-28, -10, 31), (2, 0, 16), 1500, (0.64, 0.78, 1.0), 15)
-    add_area(scene, "Rim", (-4, 28, 42), (0, 0, 19), 1900, (1.0, 0.88, 0.66), 12)
-    add_camera(scene, "ThumbnailCamera", (50, -69, 42), (4, 0, 17.5), ortho=52)
-    configure(scene, 1600, 1100, TOWER / "tower-crane" / "tower-crane-preview.png")
-    bpy.ops.render.render(write_still=True)
+    import runpy
+    namespace = runpy.run_path(str(Path(__file__).with_name('render_machine_thumbnails.py')))
+    namespace['render_thumbnail']('tower-crane')
 
 
 def render_scene_preview():

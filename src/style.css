@@ -167,7 +167,7 @@ a {
 .sidebar {
   min-height: 0;
   overflow-y: auto;
-  padding: 32px 23px 18px 28px;
+  padding: 20px;
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
@@ -193,6 +193,10 @@ a {
 .sidebar > p {
   margin: 0 0 24px;
   font-size: 11px;
+}
+#garage-panel {
+  display: grid;
+  gap: 10px;
 }
 .machine-card {
   width: 100%;
@@ -245,12 +249,6 @@ a {
     cover;
   border-radius: 6px;
   mix-blend-mode: multiply;
-}
-.crane-machine-card {
-  margin-top: 12px;
-}
-.tower-machine-card {
-  margin-top: 12px;
 }
 .tower-thumbnail {
   background-image: url("../assets/tower-construction/tower-crane/tower-crane-preview.png");
@@ -360,24 +358,22 @@ body[data-machine="tower"] .drive-section {
   background-repeat: no-repeat;
   background-color: #aaa9a3;
 }
-.machine-card strong {
-  font-size: 15px;
-  display: block;
-}
-.card-bottom {
+.machine-title {
   display: flex;
+  align-items: baseline;
   justify-content: space-between;
+  gap: 10px;
+}
+.machine-title strong {
+  font-size: 15px;
+  min-width: 0;
+}
+.machine-title > span {
+  flex: 0 0 auto;
+  text-align: right;
   font-size: 10px;
   color: #8b927c;
-  margin-top: 8px;
   letter-spacing: 1px;
-}
-.card-bottom span {
-  display: flex;
-  gap: 4px;
-  color: #607653;
-  font-size: 9px;
-  letter-spacing: 0;
 }
 .upcoming {
   display: flex;
@@ -1252,7 +1248,7 @@ body[data-mode="site"] .camera-hint {
     grid-template-columns: 285px minmax(0, 1fr) 280px;
   }
   .sidebar {
-    padding: 38px 28px;
+    padding: 24px;
   }
   .controls-panel {
     padding: 35px 27px;
@@ -1275,7 +1271,7 @@ body[data-mode="site"] .camera-hint {
     grid-template-columns: 210px minmax(0, 1fr) 218px;
   }
   .sidebar {
-    padding: 27px 16px;
+    padding: 16px;
   }
   .controls-panel {
     padding: 27px 15px;
