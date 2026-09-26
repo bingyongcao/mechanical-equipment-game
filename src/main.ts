@@ -106,6 +106,60 @@ gamepadHelp.className = "control-card gamepad-help";
 gamepadHelp.innerHTML =
   '<strong>手柄控制</strong><p id="gamepad-status" role="status"></p><p id="gamepad-bindings"></p>';
 $(".controls-scroll").prepend(gamepadHelp);
+let connectedGamepad = false;
+let nintendoGamepad = false;
+const keyboardHints = new Map<HTMLElement, string>();
+document
+  .querySelectorAll<HTMLElement>("[data-action] kbd")
+  .forEach((k) => keyboardHints.set(k, k.textContent || ""));
+const mouseCameraHint = $(".camera-hint").innerHTML;
+const keyboardHelpIntro = $("#help-dialog > p").textContent!;
+const gamepadGuide = document.createElement("p");
+gamepadGuide.id = "gamepad-guide";
+$("#help-dialog .help-grid").before(gamepadGuide);
+const menuButton = document.createElement("button");
+menuButton.id = "game-menu";
+menuButton.className = "tool-button";
+menuButton.textContent = "菜单";
+$(".top-actions").prepend(menuButton);
+const gameMenu = document.createElement("dialog");
+gameMenu.id = "game-menu-dialog";
+gameMenu.innerHTML = `<h2>游戏菜单</h2><p class="muted">切换场景、返回展厅或重新开始会重置本次任务。</p><div class="game-menu-actions">
+<button class="primary-button" data-menu="resume">继续游戏</button>
+<button data-menu="scenes">选择 / 切换场景</button>
+<button data-menu="exit">退出场景 · 返回机械展厅</button>
+<button data-menu="reset">重新开始 / 机械复位</button>
+<button data-menu="overview">默认视角</button>
+<button data-menu="stock">塔吊料场视角</button>
+<button data-menu="roof">塔吊楼顶视角</button>
+<button data-menu="cargo">吊物放回原位</button>
+<button data-menu="help">操作指南</button>
+<button data-menu="sound">切换声音</button></div>`;
+document.body.append(gameMenu);
+let menuWasPaused = false;
+menuButton.addEventListener("click", openGameMenu);
+gameMenu.addEventListener("close", () => pause(menuWasPaused));
+gameMenu
+  .querySelectorAll<HTMLButtonElement>("[data-menu]")
+  .forEach((button) => {
+    button.addEventListener("click", () => {
+      gameMenu.close();
+      // Restore immediately before an action; close event runs asynchronously.
+      pause(menuWasPaused);
+      const action = button.dataset.menu;
+      if (action === "scenes") {
+        prepareSceneDialog();
+        showDialog("#scene-dialog");
+      }
+      if (action === "exit") returnShowroom();
+      if (action === "reset") $("#reset-machine").click();
+      if (action === "overview") focus();
+      if (action === "stock" || action === "roof") focusTowerView(action);
+      if (action === "cargo") $("#return-cargo").click();
+      if (action === "help") showDialog("#help-dialog");
+      if (action === "sound") $("#sound").click();
+    });
+  });
 window.addEventListener("focus", () => {
   windowFocused = true;
 });
@@ -158,6 +212,7 @@ function showDialog(id: string) {
   $(id) as HTMLDialogElement;
   $(id).hidden = false;
   ($(id) as HTMLDialogElement).showModal();
+  if (connectedGamepad) focusGamepadOption($(id), 0, true);
 }
 document
   .querySelectorAll("[data-close]")
@@ -1159,6 +1214,158 @@ function applyMissionResult(
     }, 1800);
   }
 }
+function gamepadOptions(root: HTMLElement) {
+  return Array.from(
+    root.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"),
+  )
+    .filter((b) => b.getClientRects().length && !b.closest("[hidden]"))
+    .sort(
+      (a, b) =>
+        Number(a.classList.contains("dialog-close")) -
+        Number(b.classList.contains("dialog-close")),
+    );
+}
+function focusGamepadOption(root: HTMLElement, delta: number, initial = false) {
+  const options = gamepadOptions(root);
+  if (!options.length) return;
+  const current = initial
+    ? -1
+    : options.indexOf(document.activeElement as HTMLButtonElement);
+  const index =
+    current < 0 ? 0 : (current + delta + options.length) % options.length;
+  document
+    .querySelectorAll(".gamepad-focus")
+    .forEach((e) => e.classList.remove("gamepad-focus"));
+  options[index].classList.add("gamepad-focus");
+  options[index].focus({ preventScroll: true });
+  options[index].scrollIntoView({ block: "nearest" });
+}
+function openGameMenu() {
+  if (!ready || busy || dialogOpen()) return;
+  menuWasPaused = isPaused;
+  pause(true);
+  for (const name of ["exit", "stock", "roof", "cargo"]) {
+    const button = gameMenu.querySelector<HTMLButtonElement>(
+      `[data-menu="${name}"]`,
+    )!;
+    button.hidden = name === "exit" ? mode !== "site" : !towerMission;
+    button.disabled =
+      name === "cargo" && $<HTMLButtonElement>("#return-cargo").disabled;
+  }
+  showDialog("#game-menu-dialog");
+}
+function updateInputHints() {
+  document.body.dataset.input = connectedGamepad ? "gamepad" : "keyboard";
+  $("#gamepad-bindings").hidden = !connectedGamepad;
+  const set = (selector: string, value: string) => {
+    const node = $(selector);
+    if (node.textContent !== value) node.textContent = value;
+  };
+  set(".panel-mode", connectedGamepad ? "手柄控制" : "键盘 / 按钮");
+  set(
+    ".drive-section .control-label > span",
+    connectedGamepad
+      ? nintendoGamepad
+        ? "ZL / ZR · L / R"
+        : "LT / RT · LB / RB"
+      : "W A S D",
+  );
+  set(
+    ".work-section .section-heading > span",
+    connectedGamepad ? "双摇杆" : "Q — H",
+  );
+  for (const [kbd, original] of keyboardHints) {
+    const button = kbd.closest<HTMLButtonElement>("button")!;
+    const positive = Number(button.dataset.sign) > 0;
+    const action = button.dataset.action;
+    const value =
+      action === "drive"
+        ? positive
+          ? nintendoGamepad
+            ? "ZR"
+            : "RT"
+          : nintendoGamepad
+            ? "ZL"
+            : "LT"
+        : action === "steer"
+          ? positive
+            ? nintendoGamepad
+              ? "L"
+              : "LB"
+            : nintendoGamepad
+              ? "R"
+              : "RB"
+          : action === "joint0"
+            ? `左杆${positive ? "←" : "→"}`
+            : action === "joint2"
+              ? `左杆${positive ? "↓" : "↑"}`
+              : action === "joint1" || selectedMachine === "tower"
+                ? `右杆${positive ? "↓" : "↑"}`
+                : `右杆${positive ? "→" : "←"}`;
+    const text = connectedGamepad ? value : original;
+    if (kbd.textContent !== text) kbd.textContent = text;
+    const title =
+      button.closest(".joint-row")?.querySelector(".control-label strong")
+        ?.textContent || "";
+    const label =
+      button.querySelector("small")?.textContent ||
+      button.querySelector("span")?.textContent ||
+      "";
+    button.ariaLabel = `${title}${action === "steer" ? "底盘" : ""}${label} ${text}`;
+  }
+  set("#grab-key", connectedGamepad ? "A" : "Space");
+  const assist = $("#scoop-assist");
+  assist.ariaLabel = `${assist.querySelector("strong")!.textContent}${connectedGamepad ? " A" : variant >= 2 ? " Space" : ""}`;
+  const tip = $(".help-tip");
+  const tipText = tip.textContent!.replace(
+    /按 (Space|A)/g,
+    connectedGamepad ? "按 A" : "按 Space",
+  );
+  if (tip.textContent !== tipText) tip.textContent = tipText;
+  $("#grab-key").hidden = !connectedGamepad && variant < 2;
+  set(
+    "#game-menu",
+    connectedGamepad ? `${nintendoGamepad ? "＋" : "Menu"} 菜单` : "菜单",
+  );
+  const cameraHint = connectedGamepad
+    ? "按住 X：左杆平移 · 右杆旋转 · 扳机缩放"
+    : mouseCameraHint;
+  if ($(".camera-hint").innerHTML !== cameraHint)
+    $(".camera-hint").innerHTML = cameraHint;
+  $("#help-dialog .help-grid").hidden = connectedGamepad;
+  gamepadGuide.hidden = !connectedGamepad;
+  if (connectedGamepad)
+    gamepadGuide.textContent = $("#gamepad-bindings").textContent;
+  set(
+    "#help-dialog > p",
+    connectedGamepad
+      ? "方向键选择机械；A 选择场景或确认；B 返回或打开菜单；＋ / Menu 打开菜单。弹窗也支持左摇杆导航。"
+      : keyboardHelpIntro,
+  );
+  const start = $("#start");
+  let hint = start.querySelector("kbd");
+  if (connectedGamepad && !hint) {
+    hint = document.createElement("kbd");
+    hint.textContent = "A";
+    start.prepend(hint);
+  }
+  if (!connectedGamepad) hint?.remove();
+  for (const dialog of Array.from(document.querySelectorAll("dialog"))) {
+    let hint = dialog.querySelector<HTMLElement>(".gamepad-dialog-hint");
+    if (!hint) {
+      hint = document.createElement("p");
+      hint.className = "gamepad-dialog-hint";
+      hint.textContent = "方向键 / 左摇杆选择 · A 确认 · B 返回";
+      dialog.append(hint);
+    }
+    hint.hidden = !connectedGamepad;
+  }
+  if (!connectedGamepad)
+    document
+      .querySelectorAll(".gamepad-focus")
+      .forEach((e) => e.classList.remove("gamepad-focus"));
+}
+
 function updateGamepad(dt: number) {
   let pads: (Gamepad | null)[] = [];
   try {
@@ -1166,17 +1373,11 @@ function updateGamepad(dt: number) {
   } catch {
     /* Unavailable in restricted contexts. */
   }
-  const enabled =
-    ready && !busy && !dialogOpen() && !document.hidden && windowFocused;
+  const enabled = ready && !busy && !document.hidden && windowFocused;
   const state = gamepad.read(pads, enabled);
-  if (state.pause) {
-    pause();
-    toast(
-      isPaused
-        ? "已暂停 · 按 ＋ / Menu 继续"
-        : "继续操作 · 请先松开按键并让摇杆回中",
-    );
-  }
+  connectedGamepad = !!state.pad;
+  nintendoGamepad = state.nintendo;
+  menuButton.disabled = !ready || busy;
   const status = !state.pad
     ? pads.some(Boolean)
       ? "未识别为标准布局，请切换标准手柄模式。"
@@ -1198,10 +1399,58 @@ function updateGamepad(dt: number) {
       : selectedMachine === "crane"
         ? "左杆：回转 / 伸缩臂；右杆上下：抬放臂，左右：升降吊钩。"
         : "左杆：回转 / 斗杆；右杆上下：动臂，左右：收斗 / 翻斗。";
-  const help = `${joints} ${selectedMachine === "excavator" ? (state.nintendo ? "L/R 转向，ZL/ZR 后退/前进。 " : "LB/RB 转向，LT/RT 后退/前进。 ") : ""}A：${selectedMachine === "excavator" ? "贴地铲装（城市工地）" : "抓取/释放"}。按住 X：左杆平移、右杆旋转、${state.nintendo ? "ZL/ZR" : "LT/RT"} 拉远/拉近、右杆按下复位。${state.nintendo ? "＋" : "Menu"}：暂停。`;
+  const help = `${joints} ${selectedMachine === "excavator" ? (state.nintendo ? "L/R 转向，ZL/ZR 后退/前进。 " : "LB/RB 转向，LT/RT 后退/前进。 ") : ""}A：${mode === "showroom" ? "选择场景" : selectedMachine === "excavator" ? "贴地铲装（城市工地）" : "抓取/释放"}。按住 X：左杆平移、右杆旋转、${state.nintendo ? "ZL/ZR" : "LT/RT"} 拉远/拉近、右杆按下复位。${state.nintendo ? "＋" : "Menu"} / B：菜单。方向键选择机械；弹窗用方向键 / 左杆选择，A 确认、B 返回。`;
   if ($("#gamepad-bindings").textContent !== help)
     $("#gamepad-bindings").textContent = help;
-  if (!enabled || isPaused || !state.active || state.pause) return;
+  if (!enabled) return;
+  const dialog = document.querySelector<HTMLDialogElement>("dialog[open]");
+  if (dialog) {
+    inputs.clear();
+    // Keep machine controls disarmed for the entire modal, even with neutral sticks.
+    gamepad.suspend();
+    if (state.back || (state.pause && dialog === gameMenu)) {
+      dialog.close();
+      return;
+    }
+    if (state.navigate || state.navigateAxis)
+      focusGamepadOption(dialog, state.navigate || state.navigateAxis);
+    if (state.action) {
+      if (
+        !gamepadOptions(dialog).includes(
+          document.activeElement as HTMLButtonElement,
+        )
+      )
+        focusGamepadOption(dialog, 0);
+      (document.activeElement as HTMLButtonElement)?.click();
+    }
+    return;
+  }
+  if (state.pause || state.back) {
+    openGameMenu();
+    return;
+  }
+  if (state.help) {
+    showDialog("#help-dialog");
+    return;
+  }
+  if (isPaused || !state.active) return;
+  if (mode === "showroom" && !state.camera) {
+    if (state.navigate) {
+      const kinds = ["excavator", "crane", "tower"] as const;
+      chooseMachine(
+        kinds[
+          (kinds.indexOf(selectedMachine) + state.navigate + kinds.length) %
+            kinds.length
+        ],
+      );
+      clearInput();
+      return;
+    }
+    if (state.action) {
+      $("#start").click();
+      return;
+    }
+  }
   const [lx, ly, rx, ry] = state.axes;
   if (state.camera) {
     inputs.clear();
@@ -1360,6 +1609,7 @@ function frame(now: number) {
     updateAssistUI();
   }
   updateFireworks(dt);
+  updateInputHints();
   orbit.update();
   renderer.render(scene, camera);
 }

@@ -84,3 +84,26 @@ test("partly held analog trigger prevents rearming", () => {
   press(p, 7, 0);
   assert.equal(reader.read([p], true).active, true);
 });
+
+test("navigation and back fire once per press; stick navigation rearms on center", () => {
+  const reader = new GamepadInput(),
+    p = pad();
+  reader.read([p], true);
+  press(p, 13);
+  press(p, 0);
+  let state = reader.read([p], true);
+  assert.equal(state.navigate, 1);
+  assert.equal(state.back, true);
+  state = reader.read([p], true);
+  assert.equal(state.navigate, 0);
+  assert.equal(state.back, false);
+  p.axes[1] = -1;
+  assert.equal(reader.read([p], true).navigateAxis, -1);
+  assert.equal(reader.read([p], true).navigateAxis, 0);
+  p.axes[1] = 0;
+  reader.read([p], true);
+  p.axes[1] = -1;
+  assert.equal(reader.read([p], true).navigateAxis, -1);
+  reader.read([p], false);
+  assert.equal(reader.read([p], true).navigateAxis, 0);
+});

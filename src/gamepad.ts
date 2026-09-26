@@ -10,6 +10,7 @@ export class GamepadInput {
   private identity = "";
   private previous: boolean[] = [];
   private cameraWasHeld = false;
+  private axisDirection = 0;
   armed = false;
 
   suspend() {
@@ -36,6 +37,18 @@ export class GamepadInput {
     const action = !!edge(nintendo ? 1 : 0);
     const pause = !!edge(9);
     const reset = camera && !!edge(11);
+    const back = !!edge(nintendo ? 0 : 1);
+    const help = !!edge(8);
+    const direction =
+      Math.abs(axes[1]) > 0.55
+        ? Math.sign(axes[1])
+        : Math.abs(axes[0]) > 0.55
+          ? Math.sign(axes[0])
+          : 0;
+    const navigate = edge(13) || edge(15) ? 1 : edge(12) || edge(14) ? -1 : 0;
+    const navigateAxis =
+      enabled && !changed && direction !== this.axisDirection ? direction : 0;
+    this.axisDirection = direction;
     if (!enabled || (this.cameraWasHeld && !camera)) this.armed = false;
     if (
       enabled &&
@@ -55,6 +68,10 @@ export class GamepadInput {
       action,
       pause,
       reset,
+      back,
+      help,
+      navigate,
+      navigateAxis,
       active: enabled && this.armed && !!pad,
       drive: value(7) - value(6),
       steer: value(4) - value(5),
