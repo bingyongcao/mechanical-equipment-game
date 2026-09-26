@@ -1,6 +1,7 @@
 import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GamepadInput } from "./gamepad";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { Machine, jointNames } from "./machine";
 import { CraneMachine } from "./crane-machine";
@@ -98,6 +99,21 @@ let accumulator = 0,
   successTimer = 0;
 const held = new Map<string, { action: string; sign: number }>(),
   inputs = new Map<string, number>();
+const gamepad = new GamepadInput();
+let windowFocused = document.hasFocus();
+const gamepadHelp = document.createElement("section");
+gamepadHelp.className = "control-card gamepad-help";
+gamepadHelp.innerHTML =
+  '<strong>手柄控制</strong><p id="gamepad-status" role="status"></p><p id="gamepad-bindings"></p>';
+$(".controls-scroll").prepend(gamepadHelp);
+window.addEventListener("focus", () => {
+  windowFocused = true;
+});
+window.addEventListener("blur", () => {
+  windowFocused = false;
+  gamepad.suspend();
+});
+window.addEventListener("gamepaddisconnected", () => clearInput());
 let soundEnabled = false;
 try {
   soundEnabled = localStorage.getItem("builders-sound") === "true";
@@ -127,6 +143,7 @@ function toast(message: string, time = 2600) {
   );
 }
 function clearInput() {
+  gamepad.suspend();
   held.clear();
   inputs.clear();
   document
@@ -1142,6 +1159,102 @@ function applyMissionResult(
     }, 1800);
   }
 }
+function updateGamepad(dt: number) {
+  let pads: (Gamepad | null)[] = [];
+  try {
+    pads = [...(navigator.getGamepads?.() || [])];
+  } catch {
+    /* Unavailable in restricted contexts. */
+  }
+  const enabled =
+    ready && !busy && !dialogOpen() && !document.hidden && windowFocused;
+  const state = gamepad.read(pads, enabled);
+  if (state.pause) {
+    pause();
+    toast(
+      isPaused
+        ? "已暂停 · 按 ＋ / Menu 继续"
+        : "继续操作 · 请先松开按键并让摇杆回中",
+    );
+  }
+  const status = !state.pad
+    ? pads.some(Boolean)
+      ? "未识别为标准布局，请切换标准手柄模式。"
+      : "连接手柄后按任意键启用。"
+    : isPaused
+      ? "已暂停 · ＋ / Menu 继续"
+      : !enabled
+        ? "手柄待命"
+        : !state.active
+          ? "已连接 · 请松开按键并让摇杆回中"
+          : state.camera
+            ? "镜头控制 · 松开 X 后回中恢复机械操作"
+            : "已连接 · 机械控制";
+  if ($("#gamepad-status").textContent !== status)
+    $("#gamepad-status").textContent = status;
+  const joints =
+    selectedMachine === "tower"
+      ? "左杆：回转 / 小车内外；右杆上下：升降吊钩。"
+      : selectedMachine === "crane"
+        ? "左杆：回转 / 伸缩臂；右杆上下：抬放臂，左右：升降吊钩。"
+        : "左杆：回转 / 斗杆；右杆上下：动臂，左右：收斗 / 翻斗。";
+  const help = `${joints} ${selectedMachine === "excavator" ? (state.nintendo ? "L/R 转向，ZL/ZR 后退/前进。 " : "LB/RB 转向，LT/RT 后退/前进。 ") : ""}A：${selectedMachine === "excavator" ? "贴地铲装（城市工地）" : "抓取/释放"}。按住 X：左杆平移、右杆旋转、${state.nintendo ? "ZL/ZR" : "LT/RT"} 拉远/拉近、右杆按下复位。${state.nintendo ? "＋" : "Menu"}：暂停。`;
+  if ($("#gamepad-bindings").textContent !== help)
+    $("#gamepad-bindings").textContent = help;
+  if (!enabled || isPaused || !state.active || state.pause) return;
+  const [lx, ly, rx, ry] = state.axes;
+  if (state.camera) {
+    inputs.clear();
+    machine.setScoopAssist(false);
+    if (state.reset) {
+      focus();
+      return;
+    }
+    const offset = camera.position.clone().sub(orbit.target);
+    const spherical = new THREE.Spherical().setFromVector3(offset);
+    spherical.theta -= rx * dt * 1.7;
+    spherical.phi = clamp(
+      spherical.phi + ry * dt * 1.4,
+      Math.max(0.05, orbit.minPolarAngle),
+      orbit.maxPolarAngle,
+    );
+    spherical.radius = clamp(
+      spherical.radius * Math.exp(state.zoom * dt),
+      orbit.minDistance,
+      orbit.maxDistance,
+    );
+    const pan = new THREE.Vector3()
+      .setFromMatrixColumn(camera.matrix, 0)
+      .multiplyScalar(lx)
+      .addScaledVector(
+        new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1),
+        -ly,
+      )
+      .multiplyScalar(spherical.radius * dt * 0.65);
+    orbit.target.add(pan);
+    camera.position.copy(orbit.target).add(offset.setFromSpherical(spherical));
+    return;
+  }
+  if (state.action && mode === "site") {
+    $<HTMLButtonElement>("#scoop-assist").click();
+    return;
+  }
+  const add = (name: string, value: number) => {
+    if (value) inputs.set(name, clamp((inputs.get(name) || 0) + value, -1, 1));
+  };
+  add("joint0", -lx);
+  add("joint2", ly);
+  if (selectedMachine === "tower") add("joint3", ry);
+  else {
+    add("joint1", ry);
+    add("joint3", rx);
+  }
+  if (mode === "site" && selectedMachine === "excavator") {
+    add("drive", state.drive);
+    add("steer", state.steer);
+  }
+}
+
 function frame(now: number) {
   const dt = Math.min((now - last) / 1000, 0.08);
   const fixedStep = mode === "site" && variant === 1 ? 1 / 60 : 1 / 120;
@@ -1150,12 +1263,14 @@ function frame(now: number) {
   inputs.clear();
   for (const v of held.values())
     inputs.set(v.action, clamp((inputs.get(v.action) || 0) + v.sign, -1, 1));
+  updateGamepad(dt);
   document
     .querySelectorAll<HTMLButtonElement>("[data-action]")
     .forEach((b) =>
       b.classList.toggle(
         "pressed",
-        (inputs.get(b.dataset.action!) || 0) === Number(b.dataset.sign),
+        Math.sign(inputs.get(b.dataset.action!) || 0) ===
+          Number(b.dataset.sign),
       ),
     );
   if (ready && !busy && !isPaused && !dialogOpen() && !document.hidden) {
@@ -1280,6 +1395,12 @@ if (import.meta.env.DEV)
   (window as any).__builders = {
     get ready() {
       return ready;
+    },
+    get cameraView() {
+      return {
+        position: camera.position.toArray(),
+        target: orbit.target.toArray(),
+      };
     },
     get mode() {
       return mode;

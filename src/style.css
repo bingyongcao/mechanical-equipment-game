@@ -1491,3 +1491,11 @@ body[data-mode="site"] .start-card {
     gap: 6px;
   }
 }
+.gamepad-help p {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.gamepad-help #gamepad-status {
+  font-weight: 600;
+}
